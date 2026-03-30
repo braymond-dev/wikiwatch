@@ -129,7 +129,7 @@ select {
 
 .recent-edits-table {
   width: 100%;
-  min-width: 760px;
+  min-width: 980px;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -149,23 +149,31 @@ select {
 }
 
 .recent-col-time {
-  width: 92px;
+  width: 132px;
 }
 
 .recent-col-wiki {
-  width: 90px;
+  width: 124px;
 }
 
 .recent-col-page {
-  width: 30%;
+  width: 28%;
 }
 
 .recent-col-editor {
-  width: 22%;
+  width: 20%;
 }
 
 .recent-col-notes {
   width: auto;
+}
+
+.recent-cell-time,
+.recent-cell-wiki {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 20px;
 }
 
 .recent-cell-page,

@@ -107,8 +107,8 @@ export function RecentEditsTable({ rows }: RecentEditsTableProps) {
             ) : (
               displayedRows.map((row) => (
                 <tr key={row.id} style={{ borderTop: "1px solid rgba(175,214,255,0.1)" }}>
-                  <td style={{ whiteSpace: "nowrap" }}>{row.eventTime}</td>
-                  <td style={{ color: "var(--muted)" }}>{row.wiki}</td>
+                  <td className="recent-cell-time">{row.eventTime}</td>
+                  <td style={{ color: "var(--muted)" }} className="recent-cell-wiki">{row.wiki}</td>
                   <td style={{ fontWeight: 600 }} className="recent-cell-page">
                     {buildWikiPageUrl(row.wiki, row.pageTitle) ? (
                       <a
