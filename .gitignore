@@ -1,0 +1,14 @@
+.DS_Store
+.codex
+.env
+.env.local
+.env.*.local
+.next
+node_modules
+__pycache__
+*.pyc
+.pytest_cache
+.venv
+dist
+coverage
+postgres-data

@@ -1,0 +1,128 @@
+:root {
+  --font-display: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "IBM Plex Sans", "Inter", "Segoe UI", sans-serif;
+  --bg: #07111f;
+  --bg-elevated: rgba(12, 24, 41, 0.82);
+  --bg-card: rgba(16, 30, 50, 0.78);
+  --border: rgba(175, 214, 255, 0.16);
+  --text: #eff7ff;
+  --muted: #99abc2;
+  --accent: #77f0c2;
+  --accent-strong: #1fb88b;
+  --accent-warm: #ffb36b;
+  --danger: #ff7a7a;
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body), sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(31, 184, 139, 0.22), transparent 30%),
+    radial-gradient(circle at top right, rgba(255, 179, 107, 0.18), transparent 26%),
+    linear-gradient(180deg, #07111f 0%, #0b1628 34%, #050b15 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.page-shell {
+  width: min(1400px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 48px;
+}
+
+.glass-card {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.panel-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.hero-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1.5fr minmax(280px, 420px);
+}
+
+.stats-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.two-col-wide {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1.3fr 0.9fr;
+}
+
+.two-col-equal {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(119, 240, 194, 0.1);
+  border: 1px solid rgba(119, 240, 194, 0.22);
+  color: var(--accent);
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.chart-shell {
+  width: 100%;
+  height: 320px;
+}
+
+@media (max-width: 900px) {
+  .page-shell {
+    width: min(100% - 20px, 1400px);
+    padding-top: 18px;
+  }
+
+  .chart-shell {
+    height: 280px;
+  }
+
+  .hero-grid,
+  .stats-grid,
+  .two-col-wide,
+  .two-col-equal {
+    grid-template-columns: 1fr;
+  }
+}
