@@ -126,6 +126,22 @@ cp infra/.env.example infra/.env
 docker compose -f infra/docker-compose.yml up --build
 ```
 
+If you want your local Docker services to use the same environment variables as
+your Vercel project, pull them once and Docker Compose will automatically
+overlay them on top of `infra/.env`:
+
+```bash
+npm run env:pull:vercel
+docker compose -f infra/docker-compose.yml up --build
+```
+
+By default this pulls the `production` environment into `infra/.env.vercel`.
+You can also pull a different Vercel environment:
+
+```bash
+bash infra/pull-vercel-env.sh preview
+```
+
 This starts:
 
 - Postgres on `localhost:5432`
@@ -162,6 +178,7 @@ All configuration is environment-driven.
 
 - `DATABASE_URL`
   - Postgres connection string used by the web app and worker
+  - if `infra/.env.vercel` exists, Docker Compose will prefer the Vercel-pulled value over `infra/.env`
 
 ### Web
 
@@ -233,6 +250,32 @@ Recommended production layout:
   - set the same `DATABASE_URL`
 
 The worker is intentionally not designed to run on Vercel because it must keep a continuous SSE connection open.
+
+### Railway Worker Deployment
+
+The repo includes a root-level [railway.json](/home/ben/workspace/wikiwatch/railway.json) that points Railway at the worker Dockerfile:
+
+- Dockerfile: `apps/worker/Dockerfile`
+- Start command: `python -m worker.main`
+
+To deploy the worker on Railway:
+
+1. Create a new Railway project from this GitHub repository.
+2. Keep the repo root as the service source.
+3. Railway will pick up `railway.json` and build the worker service from `apps/worker/Dockerfile`.
+4. Set these environment variables in Railway:
+   - `DATABASE_URL`
+   - `WIKIMEDIA_STREAM_URL`
+   - `WORKER_BATCH_SIZE`
+   - `WORKER_FLUSH_INTERVAL_SECONDS`
+   - `WORKER_RECONNECT_DELAY_SECONDS`
+   - `WORKER_LOG_LEVEL`
+   - `WORKER_STORE_RAW_JSON`
+   - `RAW_EDITS_RETENTION_DAYS`
+   - `RETENTION_CHECK_INTERVAL_SECONDS`
+5. Use the same production `DATABASE_URL` that the Vercel app uses.
+
+Once Railway starts the worker, the Vercel dashboard should begin filling as events are ingested into the shared Postgres database.
 
 ## Key Design Choices
 

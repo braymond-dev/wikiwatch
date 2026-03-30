@@ -9,6 +9,7 @@
     "build": "npm --workspace apps/web run build",
     "start": "npm --workspace apps/web run start",
     "lint": "npm --workspace apps/web run lint",
-    "db:migrate": "bash packages/db/migrate.sh"
+    "db:migrate": "bash packages/db/migrate.sh",
+    "env:pull:vercel": "bash infra/pull-vercel-env.sh"
   }
 }
