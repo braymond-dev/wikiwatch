@@ -23,8 +23,12 @@ def parse_bool_env(value: str | None, default: bool) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def normalize_env_string(value: str) -> str:
+    return value.strip().strip("\"'")
+
+
 def get_settings() -> Settings:
-    database_url = os.environ["DATABASE_URL"]
+    database_url = normalize_env_string(os.environ["DATABASE_URL"])
     return Settings(
         database_url=database_url,
         stream_url=os.getenv(

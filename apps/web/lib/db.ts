@@ -11,7 +11,7 @@ function getDatabaseUrl() {
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is not set");
   }
-  return databaseUrl;
+  return databaseUrl.trim().replace(/^['"]|['"]$/g, "");
 }
 
 export function getPool() {
