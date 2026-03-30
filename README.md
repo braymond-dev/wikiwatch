@@ -194,8 +194,12 @@ All configuration is environment-driven.
 Apply the single schema file manually against any Postgres instance:
 
 ```bash
-psql "$DATABASE_URL" -f packages/db/migrations/001_init.sql
+npm run db:migrate
 ```
+
+The schema file is idempotent for fresh environment setup: it uses `IF NOT EXISTS`
+for extensions, tables, and indexes, so rerunning `npm run db:migrate` will not
+drop or recreate existing tables.
 
 ### Worker
 
