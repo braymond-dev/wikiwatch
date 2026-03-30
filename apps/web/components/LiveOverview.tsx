@@ -14,6 +14,29 @@ type LiveOverviewPayload = {
   topPagesToday: TopPageRow[];
 };
 
+const MAX_RECENT_EDITS = 40;
+
+function mergeRecentEdits(
+  previousRows: RecentEditRow[],
+  incomingRows: RecentEditRow[],
+): RecentEditRow[] {
+  const byId = new Map<number, RecentEditRow>();
+
+  for (const row of incomingRows) {
+    byId.set(row.id, row);
+  }
+
+  for (const row of previousRows) {
+    if (!byId.has(row.id)) {
+      byId.set(row.id, row);
+    }
+  }
+
+  return Array.from(byId.values())
+    .sort((left, right) => right.id - left.id)
+    .slice(0, MAX_RECENT_EDITS);
+}
+
 type LiveOverviewProps = {
   initialSummary: SummaryStats;
   initialRecentEdits: RecentEditRow[];
@@ -68,7 +91,11 @@ export function LiveOverview({
 
         const payload = (await response.json()) as { data: LiveOverviewPayload };
         if (!isCancelled) {
-          setData(payload.data);
+          setData((previous) => ({
+            summary: payload.data.summary,
+            topPagesToday: payload.data.topPagesToday,
+            recentEdits: mergeRecentEdits(previous.recentEdits, payload.data.recentEdits),
+          }));
         }
       } finally {
         if (!isCancelled) {

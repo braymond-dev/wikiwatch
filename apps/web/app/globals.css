@@ -109,6 +109,73 @@ select {
   height: 320px;
 }
 
+.recent-edits-shell {
+  max-height: 560px;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.recent-edits-banner {
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(119, 240, 194, 0.22);
+  border-radius: 14px;
+  background: rgba(119, 240, 194, 0.08);
+  color: var(--accent);
+  text-align: left;
+  cursor: pointer;
+}
+
+.recent-edits-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.recent-edits-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0 0 12px;
+  background: rgba(16, 30, 50, 0.96);
+  backdrop-filter: blur(14px);
+}
+
+.recent-edits-table tbody td {
+  padding: 14px 0;
+  vertical-align: top;
+}
+
+.recent-col-time {
+  width: 92px;
+}
+
+.recent-col-wiki {
+  width: 90px;
+}
+
+.recent-col-page {
+  width: 30%;
+}
+
+.recent-col-editor {
+  width: 22%;
+}
+
+.recent-col-notes {
+  width: auto;
+}
+
+.recent-cell-page,
+.recent-cell-editor,
+.recent-cell-notes {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
 @media (max-width: 900px) {
   .page-shell {
     width: min(100% - 20px, 1400px);

@@ -11,7 +11,17 @@ function getDatabaseUrl() {
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is not set");
   }
-  return databaseUrl.trim().replace(/^['"]|['"]$/g, "");
+  const normalized = databaseUrl.trim().replace(/^['"]|['"]$/g, "");
+
+  try {
+    const url = new URL(normalized);
+    for (const [key, value] of url.searchParams.entries()) {
+      url.searchParams.set(key, value.trim().replace(/^['"]|['"]$/g, ""));
+    }
+    return url.toString();
+  } catch {
+    return normalized;
+  }
 }
 
 export function getPool() {

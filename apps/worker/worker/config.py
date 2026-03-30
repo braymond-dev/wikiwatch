@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 
 @dataclass(frozen=True)
@@ -27,8 +28,25 @@ def normalize_env_string(value: str) -> str:
     return value.strip().strip("\"'")
 
 
+def normalize_database_url(value: str) -> str:
+    normalized = normalize_env_string(value)
+    parts = urlsplit(normalized)
+
+    if not parts.query:
+        return normalized
+
+    cleaned_query = urlencode(
+        [
+            (key, normalize_env_string(query_value))
+            for key, query_value in parse_qsl(parts.query, keep_blank_values=True)
+        ],
+        doseq=True,
+    )
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, cleaned_query, parts.fragment))
+
+
 def get_settings() -> Settings:
-    database_url = normalize_env_string(os.environ["DATABASE_URL"])
+    database_url = normalize_database_url(os.environ["DATABASE_URL"])
     return Settings(
         database_url=database_url,
         stream_url=os.getenv(
