@@ -12,7 +12,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ../packages/db/migrations:/docker-entrypoint-initdb.d:ro
+      - ../packages/db/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -34,6 +34,8 @@ services:
       WORKER_RECONNECT_DELAY_SECONDS: ${WORKER_RECONNECT_DELAY_SECONDS}
       WORKER_LOG_LEVEL: ${WORKER_LOG_LEVEL}
       WORKER_STORE_RAW_JSON: ${WORKER_STORE_RAW_JSON}
+      RAW_EDITS_RETENTION_DAYS: ${RAW_EDITS_RETENTION_DAYS}
+      RETENTION_CHECK_INTERVAL_SECONDS: ${RETENTION_CHECK_INTERVAL_SECONDS}
     depends_on:
       postgres:
         condition: service_healthy

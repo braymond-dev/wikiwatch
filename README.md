@@ -182,12 +182,16 @@ All configuration is environment-driven.
   - Logging level
 - `WORKER_STORE_RAW_JSON`
   - Set to `false` to skip storing full raw event payloads in `raw_edits.raw_json`
+- `RAW_EDITS_RETENTION_DAYS`
+  - Number of days of raw edit rows to retain; defaults to `32`
+- `RETENTION_CHECK_INTERVAL_SECONDS`
+  - How often the worker checks for old `raw_edits` rows to prune; defaults to hourly
 
 ## Running Components Individually
 
 ### Database
 
-Apply the migration manually against any Postgres instance:
+Apply the single schema file manually against any Postgres instance:
 
 ```bash
 psql "$DATABASE_URL" -f packages/db/migrations/001_init.sql

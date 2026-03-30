@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import timedelta
 
 import asyncpg
 
@@ -116,6 +117,28 @@ class Database:
         if self.pool:
             await self.pool.close()
             logger.info("Closed Postgres pool")
+
+    async def prune_raw_edits(self, retention_days: int) -> int:
+        if not self.pool:
+            raise RuntimeError("Database pool is not connected")
+
+        async with self.pool.acquire() as connection:
+            result = await connection.execute(
+                """
+                DELETE FROM raw_edits
+                WHERE event_time < NOW() - $1::interval
+                """,
+                timedelta(days=retention_days),
+            )
+
+        deleted_rows = int(result.split()[-1])
+        if deleted_rows > 0:
+            logger.info(
+                "Pruned %s raw_edits rows older than %s days",
+                deleted_rows,
+                retention_days,
+            )
+        return deleted_rows
 
     async def insert_batch(self, events: list[ParsedEditEvent]) -> None:
         if not events:

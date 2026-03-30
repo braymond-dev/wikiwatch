@@ -38,6 +38,7 @@ async def run() -> None:
 
     batch = []
     last_flush = loop.time()
+    last_retention_check = 0.0
 
     try:
         async for payload in stream.events():
@@ -55,6 +56,13 @@ async def run() -> None:
                 await database.insert_batch(batch)
                 batch.clear()
                 last_flush = now
+
+            should_check_retention = (
+                now - last_retention_check >= settings.retention_check_interval_seconds
+            )
+            if should_check_retention:
+                await database.prune_raw_edits(settings.raw_edits_retention_days)
+                last_retention_check = now
 
             if stop_event.is_set():
                 break

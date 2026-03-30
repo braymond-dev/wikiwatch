@@ -13,6 +13,8 @@ class Settings:
     reconnect_delay_seconds: float
     log_level: str
     store_raw_json: bool
+    raw_edits_retention_days: int
+    retention_check_interval_seconds: float
 
 
 def parse_bool_env(value: str | None, default: bool) -> bool:
@@ -36,4 +38,8 @@ def get_settings() -> Settings:
         ),
         log_level=os.getenv("WORKER_LOG_LEVEL", "INFO").upper(),
         store_raw_json=parse_bool_env(os.getenv("WORKER_STORE_RAW_JSON"), True),
+        raw_edits_retention_days=int(os.getenv("RAW_EDITS_RETENTION_DAYS", "32")),
+        retention_check_interval_seconds=float(
+            os.getenv("RETENTION_CHECK_INTERVAL_SECONDS", "3600")
+        ),
     )
