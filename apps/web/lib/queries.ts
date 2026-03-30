@@ -23,6 +23,13 @@ const RANGE_TO_TABLE = {
   year: "page_edit_counts_yearly",
 } as const;
 
+const DEFAULT_EXCLUDED_WIKIS = [
+  "labswiki",
+  "officewiki",
+  "foundationwiki",
+  "donatewiki",
+] as const;
+
 function getPeriodStartExpression(range: RangeKey) {
   switch (range) {
     case "day":
@@ -46,9 +53,15 @@ function buildBotClause(includeBots?: boolean, tableAlias = "") {
   return "";
 }
 
-function applyWikiFilter(baseIndex: number, wiki?: string) {
+function applyWikiScope(baseIndex: number, wiki?: string) {
   if (!wiki) {
-    return { sql: "", values: [] as string[] };
+    const placeholders = DEFAULT_EXCLUDED_WIKIS.map(
+      (_, index) => `$${baseIndex + index}`,
+    ).join(", ");
+    return {
+      sql: ` AND wiki NOT IN (${placeholders})`,
+      values: [...DEFAULT_EXCLUDED_WIKIS],
+    };
   }
   return {
     sql: ` AND wiki = $${baseIndex}`,
@@ -66,7 +79,7 @@ export async function getTopPages(
   let result;
 
   if (range === "all") {
-    const wikiFilter = applyWikiFilter(1, filters.wiki);
+    const wikiFilter = applyWikiScope(1, filters.wiki);
     const limitIndex = wikiFilter.values.length + 1;
     result = await pool.query(
       `
@@ -92,7 +105,7 @@ export async function getTopPages(
   } else {
     const tableName = RANGE_TO_TABLE[range];
     const periodExpression = getPeriodStartExpression(range);
-    const wikiFilter = applyWikiFilter(1, filters.wiki);
+    const wikiFilter = applyWikiScope(1, filters.wiki);
     const limitIndex = wikiFilter.values.length + 1;
 
     result = await pool.query(
@@ -124,7 +137,7 @@ export async function getEditsOverTime(
   range: RangeKey,
   filters: DashboardFilters = {},
 ): Promise<TimeSeriesPoint[]> {
-  const wikiFilter = applyWikiFilter(1, filters.wiki);
+  const wikiFilter = applyWikiScope(1, filters.wiki);
   const includeBotsFlagIndex = wikiFilter.values.length + 1;
   const pool = getPool();
 
@@ -179,7 +192,7 @@ export async function getEditorTypeBreakdown(
   range: RangeKey,
   filters: DashboardFilters = {},
 ): Promise<EditorTypeRow[]> {
-  const wikiFilter = applyWikiFilter(1, filters.wiki);
+  const wikiFilter = applyWikiScope(1, filters.wiki);
   const pool = getPool();
   let table = "edit_counts_daily";
   let dateFilter = "bucket_date = CURRENT_DATE";
@@ -227,7 +240,7 @@ export async function getTopWikis(
 ): Promise<WikiBreakdownRow[]> {
   const includeBotsOnlyHuman = filters.includeBots === false;
   let dateFilter = "bucket_date = CURRENT_DATE";
-  const wikiFilter = applyWikiFilter(1, filters.wiki);
+  const wikiFilter = applyWikiScope(1, filters.wiki);
   const pool = getPool();
 
   if (range === "week") {
@@ -266,6 +279,11 @@ export async function getRecentEdits(
   if (filters.wiki) {
     values.push(filters.wiki);
     clauses.push(`wiki = $${values.length}`);
+  } else {
+    values.push(...DEFAULT_EXCLUDED_WIKIS);
+    clauses.push(
+      `wiki NOT IN (${DEFAULT_EXCLUDED_WIKIS.map((_, index) => `$${index + 1}`).join(", ")})`,
+    );
   }
   if (filters.includeBots === false) {
     clauses.push("is_bot = false");
@@ -297,7 +315,7 @@ export async function getRecentEdits(
 export async function getSummaryStats(
   filters: DashboardFilters = {},
 ): Promise<SummaryStats> {
-  const wikiFilter = applyWikiFilter(1, filters.wiki);
+  const wikiFilter = applyWikiScope(1, filters.wiki);
   const pool = getPool();
 
   const todayResult = await pool.query(

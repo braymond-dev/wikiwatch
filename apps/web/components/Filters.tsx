@@ -63,7 +63,7 @@ export function Filters({ availableWikis }: FiltersProps) {
           onChange={(event) => setWiki(event.target.value)}
           style={selectStyle}
         >
-          <option value="">All wikis</option>
+          <option value="">All public wikis</option>
           {availableWikis.map((wikiName) => (
             <option key={wikiName} value={wikiName}>
               {wikiName}
