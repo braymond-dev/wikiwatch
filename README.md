@@ -189,6 +189,8 @@ All configuration is environment-driven.
 
 - `WIKIMEDIA_STREAM_URL`
   - Defaults to Wikimedia recentchange SSE stream
+- `WORKER_USER_AGENT`
+  - Descriptive user agent sent to Wikimedia; include contact info
 - `WORKER_BATCH_SIZE`
   - Number of parsed events per batch insert
 - `WORKER_STREAM_READ_TIMEOUT_SECONDS`

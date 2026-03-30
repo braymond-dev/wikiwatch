@@ -28,6 +28,7 @@ async def run() -> None:
         stream_url=settings.stream_url,
         reconnect_delay_seconds=settings.reconnect_delay_seconds,
         read_timeout_seconds=settings.stream_read_timeout_seconds,
+        user_agent=settings.user_agent,
     )
 
     stop_event = asyncio.Event()

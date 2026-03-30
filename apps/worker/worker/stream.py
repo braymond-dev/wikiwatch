@@ -18,10 +18,12 @@ class RecentChangeStream:
         stream_url: str,
         reconnect_delay_seconds: float,
         read_timeout_seconds: float,
+        user_agent: str,
     ) -> None:
         self.stream_url = stream_url
         self.reconnect_delay_seconds = reconnect_delay_seconds
         self.read_timeout_seconds = read_timeout_seconds
+        self.user_agent = user_agent
 
     async def events(self) -> AsyncIterator[dict[str, Any]]:
         timeout = aiohttp.ClientTimeout(
@@ -29,7 +31,7 @@ class RecentChangeStream:
             sock_connect=30,
             sock_read=self.read_timeout_seconds,
         )
-        headers = {"Accept": "text/event-stream", "User-Agent": "WikiWatch/1.0"}
+        headers = {"Accept": "text/event-stream", "User-Agent": self.user_agent}
 
         while True:
             try:
