@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS raw_edits (
   user_name TEXT,
   is_bot BOOLEAN NOT NULL DEFAULT FALSE,
   is_anon BOOLEAN NOT NULL DEFAULT FALSE,
+  is_temp_account BOOLEAN NOT NULL DEFAULT FALSE,
   namespace INT,
   change_type TEXT NOT NULL,
   server_name TEXT,
@@ -24,6 +25,7 @@ CREATE TABLE IF NOT EXISTS edit_counts_hourly (
   bot_edits INTEGER NOT NULL DEFAULT 0,
   human_edits INTEGER NOT NULL DEFAULT 0,
   anon_edits INTEGER NOT NULL DEFAULT 0,
+  temp_account_edits INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (bucket_start, wiki)
 );
 
@@ -34,6 +36,7 @@ CREATE TABLE IF NOT EXISTS edit_counts_daily (
   bot_edits INTEGER NOT NULL DEFAULT 0,
   human_edits INTEGER NOT NULL DEFAULT 0,
   anon_edits INTEGER NOT NULL DEFAULT 0,
+  temp_account_edits INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (bucket_date, wiki)
 );
 
@@ -81,10 +84,18 @@ CREATE TABLE IF NOT EXISTS page_edit_counts_yearly (
   PRIMARY KEY (period_start, wiki, page_title)
 );
 
+CREATE TABLE IF NOT EXISTS wikidata_entity_cache (
+  entity_id TEXT PRIMARY KEY,
+  label_en TEXT,
+  description_en TEXT,
+  last_fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_raw_edits_event_time ON raw_edits (event_time DESC);
 CREATE INDEX IF NOT EXISTS idx_raw_edits_wiki_event_time ON raw_edits (wiki, event_time DESC);
 CREATE INDEX IF NOT EXISTS idx_raw_edits_page_time ON raw_edits (page_title, event_time DESC);
 CREATE INDEX IF NOT EXISTS idx_raw_edits_is_bot ON raw_edits (is_bot, event_time DESC);
+CREATE INDEX IF NOT EXISTS idx_raw_edits_is_temp_account ON raw_edits (is_temp_account, event_time DESC);
 
 CREATE INDEX IF NOT EXISTS idx_edit_counts_hourly_wiki_bucket ON edit_counts_hourly (wiki, bucket_start DESC);
 CREATE INDEX IF NOT EXISTS idx_edit_counts_daily_wiki_bucket ON edit_counts_daily (wiki, bucket_date DESC);
@@ -98,3 +109,5 @@ CREATE INDEX IF NOT EXISTS idx_page_edit_counts_monthly_lookup
 CREATE INDEX IF NOT EXISTS idx_page_edit_counts_yearly_lookup
   ON page_edit_counts_yearly (wiki, period_start DESC, edit_count DESC);
 
+CREATE INDEX IF NOT EXISTS idx_wikidata_entity_cache_last_fetched_at
+  ON wikidata_entity_cache (last_fetched_at DESC);

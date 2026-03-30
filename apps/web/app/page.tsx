@@ -2,14 +2,14 @@ import { LeaderboardTable } from "@/components/LeaderboardTable";
 import { Filters } from "@/components/Filters";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { LiveOverview } from "@/components/LiveOverview";
-import { BotVsHumanChart } from "@/components/charts/BotVsHumanChart";
 import { ChartCard } from "@/components/charts/ChartCard";
 import { EditsLineChart } from "@/components/charts/EditsLineChart";
+import { EditorTypeChart } from "@/components/charts/EditorTypeChart";
 import { WikiBarChart } from "@/components/charts/WikiBarChart";
 import {
   getAvailableWikis,
-  getBotVsHuman,
   getEditsOverTime,
+  getEditorTypeBreakdown,
   getRecentEdits,
   getSummaryStats,
   getTopPages,
@@ -37,8 +37,9 @@ export default async function Home({ searchParams }: HomeProps) {
     topPagesWeek,
     topPagesMonth,
     topPagesYear,
+    topPagesAllTime,
     editsOverTime,
-    botVsHuman,
+    editorTypes,
     topWikis,
     recentEdits,
   ] = await Promise.all([
@@ -48,8 +49,9 @@ export default async function Home({ searchParams }: HomeProps) {
     getTopPages("week", filters, 8),
     getTopPages("month", filters, 8),
     getTopPages("year", filters, 8),
+    getTopPages("all", filters, 8),
     getEditsOverTime("week", filters),
-    getBotVsHuman("month", filters),
+    getEditorTypeBreakdown("month", filters),
     getTopWikis("month", filters),
     getRecentEdits(filters, 18),
   ]);
@@ -142,10 +144,10 @@ export default async function Home({ searchParams }: HomeProps) {
         </ChartCard>
 
         <ChartCard
-          title="Bot vs Human"
-          subtitle="Month-to-date contribution split for the current filter selection."
+          title="Editor Types"
+          subtitle="Month-to-date mix of registered, temporary-account, and bot edits."
         >
-          <BotVsHumanChart data={botVsHuman} />
+          <EditorTypeChart data={editorTypes} />
         </ChartCard>
       </section>
 
@@ -173,6 +175,11 @@ export default async function Home({ searchParams }: HomeProps) {
           title="Top Pages This Year"
           subtitle="Year-to-date activity for the most edited pages."
           rows={topPagesYear}
+        />
+        <LeaderboardTable
+          title="Top Pages All Time"
+          subtitle="Cumulative leaders across all ingested history so far."
+          rows={topPagesAllTime}
         />
       </section>
     </main>

@@ -14,6 +14,7 @@ class ParsedEditEvent:
     user_name: str | None
     is_bot: bool
     is_anon: bool
+    is_temp_account: bool
     namespace: int | None
     change_type: str
     server_name: str | None
@@ -44,6 +45,7 @@ def parse_recentchange_event(payload: dict[str, Any]) -> ParsedEditEvent | None:
     bot_flag = bool(payload.get("bot", False))
     user_name = payload.get("user")
     is_anon = bool(payload.get("anon", False)) or (user_name is None)
+    is_temp_account = bool(user_name) and str(user_name).startswith("~")
 
     page_id = payload.get("page_id")
     namespace = payload.get("namespace")
@@ -56,10 +58,10 @@ def parse_recentchange_event(payload: dict[str, Any]) -> ParsedEditEvent | None:
         user_name=str(user_name) if user_name is not None else None,
         is_bot=bot_flag,
         is_anon=is_anon,
+        is_temp_account=is_temp_account,
         namespace=int(namespace) if namespace is not None else None,
         change_type=change_type,
         server_name=payload.get("server_name"),
         comment=payload.get("comment"),
         raw_json=payload,
     )
-

@@ -2,8 +2,8 @@ import "server-only";
 
 import { getPool } from "@/lib/db";
 import {
-  BotVsHumanRow,
   DashboardFilters,
+  EditorTypeRow,
   RangeKey,
   RecentEditRow,
   SummaryStats,
@@ -33,6 +33,8 @@ function getPeriodStartExpression(range: RangeKey) {
       return "date_trunc('month', NOW())::date";
     case "year":
       return "date_trunc('year', NOW())::date";
+    case "all":
+      return null;
   }
 }
 
@@ -59,32 +61,61 @@ export async function getTopPages(
   filters: DashboardFilters = {},
   limit = 10,
 ): Promise<TopPageRow[]> {
-  const tableName = RANGE_TO_TABLE[range];
-  const periodExpression = getPeriodStartExpression(range);
-  const wikiFilter = applyWikiFilter(1, filters.wiki);
-  const limitIndex = wikiFilter.values.length + 1;
   const pool = getPool();
 
-  const result = await pool.query(
-    `
-      SELECT
-        page_title AS "pageTitle",
-        wiki,
-        CASE
-          WHEN $${limitIndex + 1}::boolean = false THEN human_edits
-          ELSE edit_count
-        END AS "editCount",
-        bot_edits AS "botEdits",
-        human_edits AS "humanEdits"
-      FROM ${tableName}
-      WHERE period_start = ${periodExpression}
-      ${wikiFilter.sql}
-      ${buildBotClause(filters.includeBots, "")}
-      ORDER BY "editCount" DESC, "pageTitle" ASC
-      LIMIT $${limitIndex}
-    `,
-    [...wikiFilter.values, limit, filters.includeBots !== false],
-  );
+  let result;
+
+  if (range === "all") {
+    const wikiFilter = applyWikiFilter(1, filters.wiki);
+    const limitIndex = wikiFilter.values.length + 1;
+    result = await pool.query(
+      `
+        SELECT
+          page_title AS "pageTitle",
+          wiki,
+          CASE
+            WHEN $${limitIndex + 1}::boolean = false THEN SUM(human_edits)
+            ELSE SUM(edit_count)
+          END::int AS "editCount",
+          SUM(bot_edits)::int AS "botEdits",
+          SUM(human_edits)::int AS "humanEdits"
+        FROM page_edit_counts_daily
+        WHERE 1 = 1
+        ${wikiFilter.sql}
+        ${buildBotClause(filters.includeBots, "")}
+        GROUP BY wiki, page_title
+        ORDER BY "editCount" DESC, "pageTitle" ASC
+        LIMIT $${limitIndex}
+      `,
+      [...wikiFilter.values, limit, filters.includeBots !== false],
+    );
+  } else {
+    const tableName = RANGE_TO_TABLE[range];
+    const periodExpression = getPeriodStartExpression(range);
+    const wikiFilter = applyWikiFilter(1, filters.wiki);
+    const limitIndex = wikiFilter.values.length + 1;
+
+    result = await pool.query(
+      `
+        SELECT
+          page_title AS "pageTitle",
+          wiki,
+          CASE
+            WHEN $${limitIndex + 1}::boolean = false THEN human_edits
+            ELSE edit_count
+          END AS "editCount",
+          bot_edits AS "botEdits",
+          human_edits AS "humanEdits"
+        FROM ${tableName}
+        WHERE period_start = ${periodExpression}
+        ${wikiFilter.sql}
+        ${buildBotClause(filters.includeBots, "")}
+        ORDER BY "editCount" DESC, "pageTitle" ASC
+        LIMIT $${limitIndex}
+      `,
+      [...wikiFilter.values, limit, filters.includeBots !== false],
+    );
+  }
 
   return enrichTopPageRowsWithWikidataLabels(result.rows);
 }
@@ -108,7 +139,9 @@ export async function getEditsOverTime(
             ELSE total_edits
           END AS "totalEdits",
           bot_edits AS "botEdits",
-          human_edits AS "humanEdits"
+          human_edits AS "humanEdits",
+          GREATEST(human_edits - temp_account_edits, 0) AS "registeredEdits",
+          temp_account_edits AS "tempAccountEdits"
         FROM edit_counts_hourly
         WHERE bucket_start >= NOW() - interval '${interval}'
         ${wikiFilter.sql}
@@ -129,7 +162,9 @@ export async function getEditsOverTime(
           ELSE total_edits
         END AS "totalEdits",
         bot_edits AS "botEdits",
-        human_edits AS "humanEdits"
+        human_edits AS "humanEdits",
+        GREATEST(human_edits - temp_account_edits, 0) AS "registeredEdits",
+        temp_account_edits AS "tempAccountEdits"
       FROM edit_counts_daily
       WHERE bucket_date >= CURRENT_DATE - interval '${interval}'
       ${wikiFilter.sql}
@@ -140,10 +175,10 @@ export async function getEditsOverTime(
   return result.rows;
 }
 
-export async function getBotVsHuman(
+export async function getEditorTypeBreakdown(
   range: RangeKey,
   filters: DashboardFilters = {},
-): Promise<BotVsHumanRow[]> {
+): Promise<EditorTypeRow[]> {
   const wikiFilter = applyWikiFilter(1, filters.wiki);
   const pool = getPool();
   let table = "edit_counts_daily";
@@ -166,7 +201,8 @@ export async function getBotVsHuman(
     `
       SELECT
         COALESCE(SUM(bot_edits), 0)::int AS "botEdits",
-        COALESCE(SUM(human_edits), 0)::int AS "humanEdits"
+        COALESCE(SUM(human_edits), 0)::int AS "humanEdits",
+        COALESCE(SUM(temp_account_edits), 0)::int AS "tempAccountEdits"
       FROM ${table}
       WHERE ${dateFilter}
       ${wikiFilter.sql}
@@ -174,11 +210,13 @@ export async function getBotVsHuman(
     wikiFilter.values,
   );
 
-  const row = result.rows[0] ?? { botEdits: 0, humanEdits: 0 };
-  const humanValue = filters.includeBots === false ? row.humanEdits : row.humanEdits;
+  const row = result.rows[0] ?? { botEdits: 0, humanEdits: 0, tempAccountEdits: 0 };
+  const tempAccountValue = row.tempAccountEdits;
+  const registeredValue = Math.max(0, row.humanEdits - tempAccountValue);
 
   return [
-    { name: "Human", value: humanValue },
+    { name: "Registered", value: registeredValue },
+    { name: "Temporary", value: tempAccountValue },
     { name: "Bot", value: filters.includeBots === false ? 0 : row.botEdits },
   ];
 }
@@ -244,6 +282,7 @@ export async function getRecentEdits(
         user_name AS "userName",
         is_bot AS "isBot",
         is_anon AS "isAnon",
+        is_temp_account AS "isTempAccount",
         comment
       FROM raw_edits
       ${clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""}

@@ -18,7 +18,10 @@ async def run() -> None:
     settings = get_settings()
     configure_logging(settings.log_level)
 
-    database = Database(settings.database_url)
+    database = Database(
+        settings.database_url,
+        store_raw_json=settings.store_raw_json,
+    )
     await database.connect()
 
     stream = RecentChangeStream(
@@ -70,4 +73,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

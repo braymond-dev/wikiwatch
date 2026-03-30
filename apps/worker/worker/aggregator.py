@@ -13,12 +13,14 @@ class CountRollup:
     bot_edits: int = 0
     human_edits: int = 0
     anon_edits: int = 0
+    temp_account_edits: int = 0
 
     def add_event(self, event: ParsedEditEvent) -> None:
         self.total_edits += 1
         self.bot_edits += int(event.is_bot)
         self.human_edits += int(not event.is_bot)
         self.anon_edits += int(event.is_anon)
+        self.temp_account_edits += int(event.is_temp_account)
 
 
 @dataclass(slots=True)
@@ -89,11 +91,27 @@ def build_rollups(events: list[ParsedEditEvent]) -> dict[str, list[tuple]]:
 
     return {
         "hourly": [
-            (bucket_start, wiki, data.total_edits, data.bot_edits, data.human_edits, data.anon_edits)
+            (
+                bucket_start,
+                wiki,
+                data.total_edits,
+                data.bot_edits,
+                data.human_edits,
+                data.anon_edits,
+                data.temp_account_edits,
+            )
             for (bucket_start, wiki), data in hourly.items()
         ],
         "daily": [
-            (bucket_date, wiki, data.total_edits, data.bot_edits, data.human_edits, data.anon_edits)
+            (
+                bucket_date,
+                wiki,
+                data.total_edits,
+                data.bot_edits,
+                data.human_edits,
+                data.anon_edits,
+                data.temp_account_edits,
+            )
             for (bucket_date, wiki), data in daily.items()
         ],
         "page_daily": [
@@ -113,4 +131,3 @@ def build_rollups(events: list[ParsedEditEvent]) -> dict[str, list[tuple]]:
             for (period_start, wiki, page_title), data in page_yearly.items()
         ],
     }
-

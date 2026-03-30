@@ -180,6 +180,8 @@ All configuration is environment-driven.
   - Delay before reconnecting after stream failures
 - `WORKER_LOG_LEVEL`
   - Logging level
+- `WORKER_STORE_RAW_JSON`
+  - Set to `false` to skip storing full raw event payloads in `raw_edits.raw_json`
 
 ## Running Components Individually
 
@@ -237,4 +239,3 @@ The worker is intentionally not designed to run on Vercel because it must keep a
 - The worker currently stores `edit` events from `recentchange`; non-edit event types are ignored to keep the product focused on page edit activity
 - Rollups are updated during ingestion, which keeps reads fast but adds some write amplification
 - This MVP favors understandable SQL and maintainable code over advanced stream-processing patterns
-

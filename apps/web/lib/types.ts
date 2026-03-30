@@ -1,4 +1,4 @@
-export type RangeKey = "day" | "week" | "month" | "year";
+export type RangeKey = "day" | "week" | "month" | "year" | "all";
 
 export type DashboardFilters = {
   wiki?: string;
@@ -10,6 +10,8 @@ export type TimeSeriesPoint = {
   totalEdits: number;
   botEdits: number;
   humanEdits: number;
+  registeredEdits: number;
+  tempAccountEdits: number;
 };
 
 export type TopPageRow = {
@@ -30,10 +32,11 @@ export type RecentEditRow = {
   userName: string | null;
   isBot: boolean;
   isAnon: boolean;
+  isTempAccount: boolean;
   comment: string | null;
 };
 
-export type BotVsHumanRow = {
+export type EditorTypeRow = {
   name: string;
   value: number;
 };

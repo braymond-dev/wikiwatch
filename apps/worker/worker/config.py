@@ -12,6 +12,13 @@ class Settings:
     flush_interval_seconds: float
     reconnect_delay_seconds: float
     log_level: str
+    store_raw_json: bool
+
+
+def parse_bool_env(value: str | None, default: bool) -> bool:
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def get_settings() -> Settings:
@@ -28,5 +35,5 @@ def get_settings() -> Settings:
             os.getenv("WORKER_RECONNECT_DELAY_SECONDS", "3")
         ),
         log_level=os.getenv("WORKER_LOG_LEVEL", "INFO").upper(),
+        store_raw_json=parse_bool_env(os.getenv("WORKER_STORE_RAW_JSON"), True),
     )
-

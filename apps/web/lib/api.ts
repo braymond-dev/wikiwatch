@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { buildFilters } from "@/lib/utils";
 
-const rangeSchema = z.enum(["day", "week", "month", "year"]).default("day");
+const rangeSchema = z.enum(["day", "week", "month", "year", "all"]).default("day");
 
 export function parseRequestParams(request: Request) {
   const { searchParams } = new URL(request.url);

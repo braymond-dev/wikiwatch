@@ -13,11 +13,11 @@ logger = logging.getLogger(__name__)
 
 RAW_INSERT_SQL = """
 INSERT INTO raw_edits (
-  event_time, wiki, page_title, page_id, user_name, is_bot, is_anon,
+  event_time, wiki, page_title, page_id, user_name, is_bot, is_anon, is_temp_account,
   namespace, change_type, server_name, comment, raw_json
 )
 SELECT
-  x.event_time, x.wiki, x.page_title, x.page_id, x.user_name, x.is_bot, x.is_anon,
+  x.event_time, x.wiki, x.page_title, x.page_id, x.user_name, x.is_bot, x.is_anon, x.is_temp_account,
   x.namespace, x.change_type, x.server_name, x.comment, x.raw_json
 FROM UNNEST(
   $1::timestamptz[],
@@ -27,20 +27,21 @@ FROM UNNEST(
   $5::text[],
   $6::boolean[],
   $7::boolean[],
-  $8::int[],
-  $9::text[],
+  $8::boolean[],
+  $9::int[],
   $10::text[],
   $11::text[],
-  $12::jsonb[]
+  $12::text[],
+  $13::jsonb[]
 ) AS x(
-  event_time, wiki, page_title, page_id, user_name, is_bot, is_anon,
+  event_time, wiki, page_title, page_id, user_name, is_bot, is_anon, is_temp_account,
   namespace, change_type, server_name, comment, raw_json
 )
 """
 
 UPSERT_HOURLY_SQL = """
 INSERT INTO edit_counts_hourly (
-  bucket_start, wiki, total_edits, bot_edits, human_edits, anon_edits
+  bucket_start, wiki, total_edits, bot_edits, human_edits, anon_edits, temp_account_edits
 )
 SELECT * FROM UNNEST(
   $1::timestamptz[],
@@ -48,18 +49,20 @@ SELECT * FROM UNNEST(
   $3::int[],
   $4::int[],
   $5::int[],
-  $6::int[]
+  $6::int[],
+  $7::int[]
 )
 ON CONFLICT (bucket_start, wiki) DO UPDATE
 SET total_edits = edit_counts_hourly.total_edits + EXCLUDED.total_edits,
     bot_edits = edit_counts_hourly.bot_edits + EXCLUDED.bot_edits,
     human_edits = edit_counts_hourly.human_edits + EXCLUDED.human_edits,
-    anon_edits = edit_counts_hourly.anon_edits + EXCLUDED.anon_edits
+    anon_edits = edit_counts_hourly.anon_edits + EXCLUDED.anon_edits,
+    temp_account_edits = edit_counts_hourly.temp_account_edits + EXCLUDED.temp_account_edits
 """
 
 UPSERT_DAILY_SQL = """
 INSERT INTO edit_counts_daily (
-  bucket_date, wiki, total_edits, bot_edits, human_edits, anon_edits
+  bucket_date, wiki, total_edits, bot_edits, human_edits, anon_edits, temp_account_edits
 )
 SELECT * FROM UNNEST(
   $1::date[],
@@ -67,13 +70,15 @@ SELECT * FROM UNNEST(
   $3::int[],
   $4::int[],
   $5::int[],
-  $6::int[]
+  $6::int[],
+  $7::int[]
 )
 ON CONFLICT (bucket_date, wiki) DO UPDATE
 SET total_edits = edit_counts_daily.total_edits + EXCLUDED.total_edits,
     bot_edits = edit_counts_daily.bot_edits + EXCLUDED.bot_edits,
     human_edits = edit_counts_daily.human_edits + EXCLUDED.human_edits,
-    anon_edits = edit_counts_daily.anon_edits + EXCLUDED.anon_edits
+    anon_edits = edit_counts_daily.anon_edits + EXCLUDED.anon_edits,
+    temp_account_edits = edit_counts_daily.temp_account_edits + EXCLUDED.temp_account_edits
 """
 
 UPSERT_PAGE_SQL = """
@@ -98,8 +103,9 @@ SET page_id = COALESCE(EXCLUDED.page_id, {table_name}.page_id),
 
 
 class Database:
-    def __init__(self, database_url: str) -> None:
+    def __init__(self, database_url: str, store_raw_json: bool = True) -> None:
         self.database_url = database_url
+        self.store_raw_json = store_raw_json
         self.pool: asyncpg.Pool | None = None
 
     async def connect(self) -> None:
@@ -130,11 +136,15 @@ class Database:
                     [event.user_name for event in events],
                     [event.is_bot for event in events],
                     [event.is_anon for event in events],
+                    [event.is_temp_account for event in events],
                     [event.namespace for event in events],
                     [event.change_type for event in events],
                     [event.server_name for event in events],
                     [event.comment for event in events],
-                    [json.dumps(event.raw_json) for event in events],
+                    [
+                        json.dumps(event.raw_json) if self.store_raw_json else None
+                        for event in events
+                    ],
                 )
                 await self._upsert_count_rollups(connection, UPSERT_HOURLY_SQL, rollups["hourly"])
                 await self._upsert_count_rollups(connection, UPSERT_DAILY_SQL, rollups["daily"])

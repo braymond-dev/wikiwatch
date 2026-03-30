@@ -11,6 +11,7 @@ import {
 } from "recharts";
 
 import { WikiBreakdownRow } from "@/lib/types";
+import { tooltipTheme } from "@/components/charts/tooltip-theme";
 
 type WikiBarChartProps = {
   data: WikiBreakdownRow[];
@@ -25,11 +26,8 @@ export function WikiBarChart({ data }: WikiBarChartProps) {
           <XAxis dataKey="wiki" stroke="#99abc2" tickLine={false} interval={0} angle={-20} textAnchor="end" height={70} />
           <YAxis stroke="#99abc2" tickLine={false} width={52} />
           <Tooltip
-            contentStyle={{
-              background: "rgba(5,11,21,0.96)",
-              border: "1px solid rgba(175,214,255,0.14)",
-              borderRadius: 16,
-            }}
+            contentStyle={tooltipTheme.contentStyle}
+            labelStyle={tooltipTheme.labelStyle}
           />
           <Bar dataKey="totalEdits" fill="#7fc2ff" radius={[10, 10, 0, 0]} />
         </BarChart>
@@ -37,4 +35,3 @@ export function WikiBarChart({ data }: WikiBarChartProps) {
     </div>
   );
 }
-

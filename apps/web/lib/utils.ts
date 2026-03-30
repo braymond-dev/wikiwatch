@@ -35,6 +35,7 @@ export function getRangeLabel(range: RangeKey): string {
       return "This Month";
     case "year":
       return "This Year";
+    case "all":
+      return "All Time";
   }
 }
-

@@ -62,6 +62,7 @@ export function RecentEditsTable({ rows }: RecentEditsTableProps) {
                   <td style={{ padding: "14px 0" }}>
                     {row.userName ?? "Unknown"}
                     {row.isAnon ? " (anon)" : ""}
+                    {row.isTempAccount ? " (temp)" : ""}
                     {row.isBot ? " (bot)" : ""}
                   </td>
                   <td style={{ padding: "14px 0", color: "var(--muted)" }}>
