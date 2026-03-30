@@ -191,6 +191,8 @@ All configuration is environment-driven.
   - Defaults to Wikimedia recentchange SSE stream
 - `WORKER_BATCH_SIZE`
   - Number of parsed events per batch insert
+- `WORKER_STREAM_READ_TIMEOUT_SECONDS`
+  - Max seconds to wait for stream activity before reconnecting; defaults to `120`
 - `WORKER_FLUSH_INTERVAL_SECONDS`
   - Max seconds before flushing a partial batch
 - `WORKER_RECONNECT_DELAY_SECONDS`

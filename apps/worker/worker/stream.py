@@ -13,12 +13,22 @@ logger = logging.getLogger(__name__)
 
 
 class RecentChangeStream:
-    def __init__(self, stream_url: str, reconnect_delay_seconds: float) -> None:
+    def __init__(
+        self,
+        stream_url: str,
+        reconnect_delay_seconds: float,
+        read_timeout_seconds: float,
+    ) -> None:
         self.stream_url = stream_url
         self.reconnect_delay_seconds = reconnect_delay_seconds
+        self.read_timeout_seconds = read_timeout_seconds
 
     async def events(self) -> AsyncIterator[dict[str, Any]]:
-        timeout = aiohttp.ClientTimeout(total=None, sock_connect=30, sock_read=None)
+        timeout = aiohttp.ClientTimeout(
+            total=None,
+            sock_connect=30,
+            sock_read=self.read_timeout_seconds,
+        )
         headers = {"Accept": "text/event-stream", "User-Agent": "WikiWatch/1.0"}
 
         while True:

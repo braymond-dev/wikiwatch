@@ -9,6 +9,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 class Settings:
     database_url: str
     stream_url: str
+    stream_read_timeout_seconds: float
     batch_size: int
     flush_interval_seconds: float
     reconnect_delay_seconds: float
@@ -52,6 +53,9 @@ def get_settings() -> Settings:
         stream_url=os.getenv(
             "WIKIMEDIA_STREAM_URL",
             "https://stream.wikimedia.org/v2/stream/recentchange",
+        ),
+        stream_read_timeout_seconds=float(
+            os.getenv("WORKER_STREAM_READ_TIMEOUT_SECONDS", "120")
         ),
         batch_size=int(os.getenv("WORKER_BATCH_SIZE", "100")),
         flush_interval_seconds=float(os.getenv("WORKER_FLUSH_INTERVAL_SECONDS", "5")),
