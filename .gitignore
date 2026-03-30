@@ -9,6 +9,7 @@ __pycache__
 *.pyc
 .pytest_cache
 .venv
+*.tsbuildinfo
 dist
 coverage
 postgres-data
