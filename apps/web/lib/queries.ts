@@ -370,7 +370,6 @@ export async function getAvailableWikis(): Promise<string[]> {
       SELECT DISTINCT wiki
       FROM raw_edits
       ORDER BY wiki ASC
-      LIMIT 100
     `,
   );
   return result.rows.map((row) => row.wiki as string);
