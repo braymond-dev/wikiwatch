@@ -92,7 +92,7 @@ export async function getTopPages(
           END::int AS "editCount",
           SUM(bot_edits)::int AS "botEdits",
           SUM(human_edits)::int AS "humanEdits"
-        FROM page_edit_counts_daily
+        FROM page_edit_counts_yearly
         WHERE 1 = 1
         ${wikiFilter.sql}
         ${buildBotClause(filters.includeBots, "")}
@@ -367,8 +367,9 @@ export async function getAvailableWikis(): Promise<string[]> {
   const pool = getPool();
   const result = await pool.query(
     `
-      SELECT DISTINCT wiki
-      FROM raw_edits
+      SELECT wiki
+      FROM edit_counts_daily
+      GROUP BY wiki
       ORDER BY wiki ASC
     `,
   );
