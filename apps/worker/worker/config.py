@@ -11,6 +11,7 @@ class Settings:
     stream_url: str
     user_agent: str
     stream_read_timeout_seconds: float
+    top_pages_limit: int
     batch_size: int
     flush_interval_seconds: float
     reconnect_delay_seconds: float
@@ -62,14 +63,15 @@ def get_settings() -> Settings:
         stream_read_timeout_seconds=float(
             os.getenv("WORKER_STREAM_READ_TIMEOUT_SECONDS", "120")
         ),
+        top_pages_limit=int(os.getenv("WORKER_TOP_PAGES_LIMIT", "20")),
         batch_size=int(os.getenv("WORKER_BATCH_SIZE", "100")),
         flush_interval_seconds=float(os.getenv("WORKER_FLUSH_INTERVAL_SECONDS", "5")),
         reconnect_delay_seconds=float(
             os.getenv("WORKER_RECONNECT_DELAY_SECONDS", "3")
         ),
         log_level=os.getenv("WORKER_LOG_LEVEL", "INFO").upper(),
-        store_raw_json=parse_bool_env(os.getenv("WORKER_STORE_RAW_JSON"), True),
-        raw_edits_retention_days=int(os.getenv("RAW_EDITS_RETENTION_DAYS", "32")),
+        store_raw_json=parse_bool_env(os.getenv("WORKER_STORE_RAW_JSON"), False),
+        raw_edits_retention_days=int(os.getenv("RAW_EDITS_RETENTION_DAYS", "3")),
         retention_check_interval_seconds=float(
             os.getenv("RETENTION_CHECK_INTERVAL_SECONDS", "3600")
         ),

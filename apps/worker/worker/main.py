@@ -21,6 +21,7 @@ async def run() -> None:
     database = Database(
         settings.database_url,
         store_raw_json=settings.store_raw_json,
+        top_pages_limit=settings.top_pages_limit,
     )
     await database.connect()
 
@@ -64,6 +65,7 @@ async def run() -> None:
             )
             if should_check_retention:
                 await database.prune_raw_edits(settings.raw_edits_retention_days)
+                await database.prune_stale_current_page_counts()
                 last_retention_check = now
 
             if stop_event.is_set():

@@ -26,12 +26,14 @@ class CountRollup:
 @dataclass(slots=True)
 class PageRollup:
     page_id: int | None = None
+    namespace: int | None = None
     edit_count: int = 0
     bot_edits: int = 0
     human_edits: int = 0
 
     def add_event(self, event: ParsedEditEvent) -> None:
         self.page_id = event.page_id or self.page_id
+        self.namespace = event.namespace if event.namespace is not None else self.namespace
         self.edit_count += 1
         self.bot_edits += int(event.is_bot)
         self.human_edits += int(not event.is_bot)
@@ -115,19 +117,19 @@ def build_rollups(events: list[ParsedEditEvent]) -> dict[str, list[tuple]]:
             for (bucket_date, wiki), data in daily.items()
         ],
         "page_daily": [
-            (period_start, wiki, page_title, data.page_id, data.edit_count, data.bot_edits, data.human_edits)
+            (period_start, wiki, page_title, data.page_id, data.namespace, data.edit_count, data.bot_edits, data.human_edits)
             for (period_start, wiki, page_title), data in page_daily.items()
         ],
         "page_weekly": [
-            (period_start, wiki, page_title, data.page_id, data.edit_count, data.bot_edits, data.human_edits)
+            (period_start, wiki, page_title, data.page_id, data.namespace, data.edit_count, data.bot_edits, data.human_edits)
             for (period_start, wiki, page_title), data in page_weekly.items()
         ],
         "page_monthly": [
-            (period_start, wiki, page_title, data.page_id, data.edit_count, data.bot_edits, data.human_edits)
+            (period_start, wiki, page_title, data.page_id, data.namespace, data.edit_count, data.bot_edits, data.human_edits)
             for (period_start, wiki, page_title), data in page_monthly.items()
         ],
         "page_yearly": [
-            (period_start, wiki, page_title, data.page_id, data.edit_count, data.bot_edits, data.human_edits)
+            (period_start, wiki, page_title, data.page_id, data.namespace, data.edit_count, data.bot_edits, data.human_edits)
             for (period_start, wiki, page_title), data in page_yearly.items()
         ],
     }

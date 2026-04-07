@@ -84,7 +84,7 @@ SET total_edits = edit_counts_daily.total_edits + EXCLUDED.total_edits,
 
 UPSERT_PAGE_SQL = """
 INSERT INTO {table_name} (
-  period_start, wiki, page_title, page_id, edit_count, bot_edits, human_edits
+  period_start, wiki, page_title, page_id, namespace, edit_count, bot_edits, human_edits
 )
 SELECT * FROM UNNEST(
   $1::date[],
@@ -93,10 +93,12 @@ SELECT * FROM UNNEST(
   $4::bigint[],
   $5::int[],
   $6::int[],
-  $7::int[]
+  $7::int[],
+  $8::int[]
 )
 ON CONFLICT (period_start, wiki, page_title) DO UPDATE
 SET page_id = COALESCE(EXCLUDED.page_id, {table_name}.page_id),
+    namespace = COALESCE(EXCLUDED.namespace, {table_name}.namespace),
     edit_count = {table_name}.edit_count + EXCLUDED.edit_count,
     bot_edits = {table_name}.bot_edits + EXCLUDED.bot_edits,
     human_edits = {table_name}.human_edits + EXCLUDED.human_edits
@@ -104,9 +106,15 @@ SET page_id = COALESCE(EXCLUDED.page_id, {table_name}.page_id),
 
 
 class Database:
-    def __init__(self, database_url: str, store_raw_json: bool = True) -> None:
+    def __init__(
+        self,
+        database_url: str,
+        store_raw_json: bool = True,
+        top_pages_limit: int = 20,
+    ) -> None:
         self.database_url = database_url
         self.store_raw_json = store_raw_json
+        self.top_pages_limit = top_pages_limit
         self.pool: asyncpg.Pool | None = None
 
     async def connect(self) -> None:
@@ -140,6 +148,37 @@ class Database:
             )
         return deleted_rows
 
+    async def prune_stale_current_page_counts(self) -> None:
+        if not self.pool:
+            raise RuntimeError("Database pool is not connected")
+
+        async with self.pool.acquire() as connection:
+            async with connection.transaction():
+                await connection.execute(
+                    """
+                    DELETE FROM current_page_counts_daily
+                    WHERE period_start < CURRENT_DATE
+                    """
+                )
+                await connection.execute(
+                    """
+                    DELETE FROM current_page_counts_weekly
+                    WHERE period_start < date_trunc('week', NOW())::date
+                    """
+                )
+                await connection.execute(
+                    """
+                    DELETE FROM current_page_counts_monthly
+                    WHERE period_start < date_trunc('month', NOW())::date
+                    """
+                )
+                await connection.execute(
+                    """
+                    DELETE FROM current_page_counts_yearly
+                    WHERE period_start < date_trunc('year', NOW())::date
+                    """
+                )
+
     async def insert_batch(self, events: list[ParsedEditEvent]) -> None:
         if not events:
             return
@@ -171,10 +210,34 @@ class Database:
                 )
                 await self._upsert_count_rollups(connection, UPSERT_HOURLY_SQL, rollups["hourly"])
                 await self._upsert_count_rollups(connection, UPSERT_DAILY_SQL, rollups["daily"])
-                await self._upsert_page_rollups(connection, "page_edit_counts_daily", rollups["page_daily"])
-                await self._upsert_page_rollups(connection, "page_edit_counts_weekly", rollups["page_weekly"])
-                await self._upsert_page_rollups(connection, "page_edit_counts_monthly", rollups["page_monthly"])
-                await self._upsert_page_rollups(connection, "page_edit_counts_yearly", rollups["page_yearly"])
+                await self._upsert_page_rollups(connection, "current_page_counts_daily", rollups["page_daily"])
+                await self._upsert_page_rollups(connection, "current_page_counts_weekly", rollups["page_weekly"])
+                await self._upsert_page_rollups(connection, "current_page_counts_monthly", rollups["page_monthly"])
+                await self._upsert_page_rollups(connection, "current_page_counts_yearly", rollups["page_yearly"])
+                await self._refresh_top_pages(
+                    connection,
+                    "current_page_counts_daily",
+                    "top_pages_daily",
+                    {(row[0], row[1]) for row in rollups["page_daily"]},
+                )
+                await self._refresh_top_pages(
+                    connection,
+                    "current_page_counts_weekly",
+                    "top_pages_weekly",
+                    {(row[0], row[1]) for row in rollups["page_weekly"]},
+                )
+                await self._refresh_top_pages(
+                    connection,
+                    "current_page_counts_monthly",
+                    "top_pages_monthly",
+                    {(row[0], row[1]) for row in rollups["page_monthly"]},
+                )
+                await self._refresh_top_pages(
+                    connection,
+                    "current_page_counts_yearly",
+                    "top_pages_yearly",
+                    {(row[0], row[1]) for row in rollups["page_yearly"]},
+                )
 
         logger.info("Inserted batch of %s events", len(events))
 
@@ -199,3 +262,62 @@ class Database:
             return
         columns = list(zip(*rows))
         await connection.execute(UPSERT_PAGE_SQL.format(table_name=table_name), *columns)
+
+    async def _refresh_top_pages(
+        self,
+        connection: asyncpg.Connection,
+        source_table: str,
+        target_table: str,
+        period_wiki_pairs: set[tuple],
+    ) -> None:
+        if not period_wiki_pairs:
+            return
+
+        for period_start, wiki in period_wiki_pairs:
+            await connection.execute(
+                f"""
+                DELETE FROM {target_table}
+                WHERE period_start = $1 AND wiki = $2
+                """,
+                period_start,
+                wiki,
+            )
+            await connection.execute(
+                f"""
+                INSERT INTO {target_table} (
+                  period_start, wiki, page_title, page_id, namespace, rank, edit_count, bot_edits, human_edits
+                )
+                SELECT
+                  period_start,
+                  wiki,
+                  page_title,
+                  page_id,
+                  namespace,
+                  rank,
+                  edit_count,
+                  bot_edits,
+                  human_edits
+                FROM (
+                  SELECT
+                    period_start,
+                    wiki,
+                    page_title,
+                    page_id,
+                    namespace,
+                    edit_count,
+                    bot_edits,
+                    human_edits,
+                    ROW_NUMBER() OVER (
+                      ORDER BY edit_count DESC, human_edits DESC, page_title ASC
+                    ) AS rank
+                  FROM {source_table}
+                  WHERE period_start = $1
+                    AND wiki = $2
+                    AND COALESCE(namespace, 0) = 0
+                ) ranked
+                WHERE rank <= $3
+                """,
+                period_start,
+                wiki,
+                self.top_pages_limit,
+            )

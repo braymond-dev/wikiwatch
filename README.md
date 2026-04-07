@@ -1,6 +1,6 @@
 # WikiWatch
 
-WikiWatch is a deployable analytics dashboard for Wikimedia edit activity. It continuously ingests the Wikimedia `recentchange` EventStreams feed into Postgres, maintains rollup tables for fast analytics queries, and renders a polished dashboard with leaderboards, charts, and recent activity.
+WikiWatch is a deployable analytics dashboard for Wikimedia edit activity. It continuously ingests the Wikimedia `recentchange` EventStreams feed into Postgres, maintains compact rollup tables for fast analytics queries, and renders a polished dashboard with leaderboards, charts, and recent activity.
 
 ## What It Does
 
@@ -57,10 +57,13 @@ The Wikimedia stream can become large quickly. Querying only raw events for ever
   - powers short-range time series and near-real-time trend views
 - `edit_counts_daily`
   - powers longer-range charts and summary metrics
-- `page_edit_counts_daily|weekly|monthly|yearly`
-  - powers fast "top edited pages" leaderboards by period
+- `current_page_counts_daily|weekly|monthly|yearly`
+  - keeps full per-page counts only for the active day, week, month, and year
+- `top_pages_daily|weekly|monthly|yearly`
+  - stores only the top ranked leaderboard rows per wiki and period
+  - defaults to the top `20` article-space pages per wiki
 
-This keeps the SQL simple and maintainable while avoiding repeated scans over the raw event table.
+This keeps the SQL simple and maintainable while avoiding repeated scans over the raw event table and prevents historical page-leaderboard storage from growing without bound.
 
 ## Most Important Dashboard Queries
 
@@ -68,10 +71,10 @@ This keeps the SQL simple and maintainable while avoiding repeated scans over th
 
 ```sql
 SELECT page_title, wiki, edit_count, bot_edits, human_edits
-FROM page_edit_counts_weekly
+FROM top_pages_weekly
 WHERE period_start = date_trunc('week', now())::date
   AND ($1::text IS NULL OR wiki = $1)
-ORDER BY edit_count DESC
+ORDER BY rank ASC
 LIMIT 20;
 ```
 
@@ -203,10 +206,13 @@ All configuration is environment-driven.
   - Logging level
 - `WORKER_STORE_RAW_JSON`
   - Set to `false` to skip storing full raw event payloads in `raw_edits.raw_json`
+  - defaults to `false`
 - `RAW_EDITS_RETENTION_DAYS`
-  - Number of days of raw edit rows to retain; defaults to `32`
+  - Number of days of raw edit rows to retain; defaults to `3`
 - `RETENTION_CHECK_INTERVAL_SECONDS`
   - How often the worker checks for old `raw_edits` rows to prune; defaults to hourly
+- `WORKER_TOP_PAGES_LIMIT`
+  - Number of ranked pages per wiki and period to retain in `top_pages_*`; defaults to `20`
 
 ## Running Components Individually
 
@@ -270,6 +276,9 @@ To deploy the worker on Railway:
 4. Set these environment variables in Railway:
    - `DATABASE_URL`
    - `WIKIMEDIA_STREAM_URL`
+   - `WORKER_USER_AGENT`
+   - `WORKER_STREAM_READ_TIMEOUT_SECONDS`
+   - `WORKER_TOP_PAGES_LIMIT`
    - `WORKER_BATCH_SIZE`
    - `WORKER_FLUSH_INTERVAL_SECONDS`
    - `WORKER_RECONNECT_DELAY_SECONDS`
@@ -287,10 +296,12 @@ Once Railway starts the worker, the Vercel dashboard should begin filling as eve
 - Python worker uses `aiohttp` plus `asyncpg` for straightforward async ingestion
 - Dashboard queries read only from server-side code to avoid exposing direct DB access
 - Hourly and daily rollups balance freshness with efficient time-range analytics
-- Raw event JSON is retained for debugging and future enrichment
+- Historical page leaderboards are stored as compact top-N snapshots instead of full per-page history
+- Raw event JSON storage is optional and disabled by default to reduce storage growth
 
 ## Notes and Tradeoffs
 
 - The worker currently stores `edit` events from `recentchange`; non-edit event types are ignored to keep the product focused on page edit activity
 - Rollups are updated during ingestion, which keeps reads fast but adds some write amplification
+- Only the active day/week/month/year retain full per-page counts; historical leaderboards are compact snapshots
 - This MVP favors understandable SQL and maintainable code over advanced stream-processing patterns

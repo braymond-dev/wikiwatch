@@ -17,10 +17,10 @@ import {
 } from "@/lib/wikidata";
 
 const RANGE_TO_TABLE = {
-  day: "page_edit_counts_daily",
-  week: "page_edit_counts_weekly",
-  month: "page_edit_counts_monthly",
-  year: "page_edit_counts_yearly",
+  day: "top_pages_daily",
+  week: "top_pages_weekly",
+  month: "top_pages_monthly",
+  year: "top_pages_yearly",
 } as const;
 
 const DEFAULT_EXCLUDED_WIKIS = [
@@ -92,7 +92,7 @@ export async function getTopPages(
           END::int AS "editCount",
           SUM(bot_edits)::int AS "botEdits",
           SUM(human_edits)::int AS "humanEdits"
-        FROM page_edit_counts_yearly
+        FROM top_pages_yearly
         WHERE 1 = 1
         ${wikiFilter.sql}
         ${buildBotClause(filters.includeBots, "")}
@@ -123,7 +123,7 @@ export async function getTopPages(
         WHERE period_start = ${periodExpression}
         ${wikiFilter.sql}
         ${buildBotClause(filters.includeBots, "")}
-        ORDER BY "editCount" DESC, "pageTitle" ASC
+        ORDER BY rank ASC, "pageTitle" ASC
         LIMIT $${limitIndex}
       `,
       [...wikiFilter.values, limit, filters.includeBots !== false],
