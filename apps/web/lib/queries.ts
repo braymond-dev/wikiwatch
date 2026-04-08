@@ -8,6 +8,7 @@ import {
   RecentEditRow,
   SummaryStats,
   TimeSeriesPoint,
+  TrendingPageRow,
   TopPageRow,
   WikiBreakdownRow,
 } from "@/lib/types";
@@ -361,6 +362,97 @@ export async function getSummaryStats(
     activeWikisToday: today.activeWikisToday,
     botShareToday,
   };
+}
+
+export async function getTrendingPages(
+  filters: DashboardFilters = {},
+  limit = 6,
+): Promise<TrendingPageRow[]> {
+  const pool = getPool();
+  const values: Array<string | number> = [];
+  const clauses: string[] = [
+    "event_time >= NOW() - interval '2 hours'",
+    "namespace = 0",
+  ];
+
+  if (filters.wiki) {
+    values.push(filters.wiki);
+    clauses.push(`wiki = $${values.length}`);
+  } else {
+    values.push(...DEFAULT_EXCLUDED_WIKIS);
+    clauses.push(
+      `wiki NOT IN (${DEFAULT_EXCLUDED_WIKIS.map((_, index) => `$${index + 1}`).join(", ")})`,
+    );
+  }
+
+  if (filters.includeBots === false) {
+    clauses.push("is_bot = false");
+  }
+
+  values.push(limit);
+
+  const result = await pool.query<TrendingPageRow>(
+    `
+      WITH page_windows AS (
+        SELECT
+          wiki,
+          page_title AS "pageTitle",
+          COUNT(*) FILTER (
+            WHERE event_time >= NOW() - interval '1 hour'
+          )::int AS "currentEdits",
+          COUNT(*) FILTER (
+            WHERE event_time >= NOW() - interval '2 hours'
+              AND event_time < NOW() - interval '1 hour'
+          )::int AS "previousEdits",
+          COUNT(*) FILTER (
+            WHERE event_time >= NOW() - interval '1 hour' AND is_bot = true
+          )::int AS "botEdits",
+          COUNT(*) FILTER (
+            WHERE event_time >= NOW() - interval '1 hour' AND is_bot = false
+          )::int AS "humanEdits"
+        FROM raw_edits
+        WHERE ${clauses.join(" AND ")}
+        GROUP BY wiki, page_title
+      )
+      SELECT
+        wiki,
+        "pageTitle",
+        "currentEdits",
+        "previousEdits",
+        ("currentEdits" - "previousEdits")::int AS "deltaEdits",
+        "botEdits",
+        "humanEdits"
+      FROM page_windows
+      WHERE "currentEdits" >= 5
+        AND "currentEdits" > "previousEdits"
+      ORDER BY
+        ("currentEdits" - "previousEdits") DESC,
+        "currentEdits" DESC,
+        "pageTitle" ASC
+      LIMIT $${values.length}
+    `,
+    values,
+  );
+
+  const enriched = await enrichTopPageRowsWithWikidataLabels(
+    result.rows.map((row) => ({
+      pageTitle: row.pageTitle,
+      displayTitle: row.displayTitle,
+      wiki: row.wiki,
+      editCount: row.currentEdits,
+      botEdits: row.botEdits,
+      humanEdits: row.humanEdits,
+    })),
+  );
+
+  const displayTitles = new Map(
+    enriched.map((row) => [`${row.wiki}:${row.pageTitle}`, row.displayTitle]),
+  );
+
+  return result.rows.map((row) => ({
+    ...row,
+    displayTitle: displayTitles.get(`${row.wiki}:${row.pageTitle}`),
+  }));
 }
 
 export async function getAvailableWikis(): Promise<string[]> {

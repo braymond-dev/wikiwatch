@@ -52,3 +52,14 @@ export type SummaryStats = {
   activeWikisToday: number;
   botShareToday: number;
 };
+
+export type TrendingPageRow = {
+  pageTitle: string;
+  displayTitle?: string;
+  wiki: string;
+  currentEdits: number;
+  previousEdits: number;
+  deltaEdits: number;
+  botEdits: number;
+  humanEdits: number;
+};

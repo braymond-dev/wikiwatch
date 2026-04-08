@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CSSProperties } from "react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 type FiltersProps = {
   availableWikis: string[];
@@ -22,6 +22,11 @@ export function Filters({ availableWikis }: FiltersProps) {
     setWiki(searchParams.get("wiki") ?? "");
     setIncludeBots(searchParams.get("includeBots") ?? "true");
   }, [searchParams]);
+
+  const englishWikiShortcuts = useMemo(
+    () => availableWikis.filter((wikiName) => wikiName.startsWith("en")),
+    [availableWikis],
+  );
 
   function apply() {
     const next = new URLSearchParams(searchParams.toString());
@@ -64,6 +69,14 @@ export function Filters({ availableWikis }: FiltersProps) {
           style={selectStyle}
         >
           <option value="">All public wikis</option>
+          {englishWikiShortcuts.map((wikiName) => (
+            <option key={`shortcut-${wikiName}`} value={wikiName}>
+              {wikiName}
+            </option>
+          ))}
+          {englishWikiShortcuts.length > 0 ? (
+            <option disabled>------</option>
+          ) : null}
           {availableWikis.map((wikiName) => (
             <option key={wikiName} value={wikiName}>
               {wikiName}

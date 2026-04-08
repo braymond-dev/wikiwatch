@@ -74,6 +74,127 @@ select {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.trending-shell {
+  padding: 20px;
+  border-radius: 24px;
+}
+
+.trending-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.trending-title {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.5rem;
+}
+
+.trending-subtitle {
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+}
+
+.trending-empty {
+  padding: 10px 2px 2px;
+}
+
+.trending-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.trending-card {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  min-height: 190px;
+  padding: 18px;
+  border: 1px solid rgba(175, 214, 255, 0.14);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at top right, rgba(119, 240, 194, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(12, 24, 41, 0.9), rgba(8, 17, 30, 0.92));
+}
+
+.trending-rank {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: rgba(119, 240, 194, 0.78);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.trending-page {
+  padding-right: 44px;
+}
+
+.trending-link {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.22rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-decoration: underline;
+  text-decoration-color: rgba(119, 240, 194, 0.28);
+  text-underline-offset: 0.16em;
+}
+
+.trending-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.trending-delta {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.trending-stats {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.trending-stat-label {
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.trending-stat-value {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.32rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.trending-stat-value-subtle {
+  color: #d4e3f5;
+}
+
+.trending-stat-value-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.trending-human {
+  color: var(--accent);
+}
+
+.trending-bot {
+  color: var(--accent-warm);
+}
+
 .two-col-wide {
   display: grid;
   gap: 20px;
@@ -198,6 +319,11 @@ select {
   .stats-grid,
   .two-col-wide,
   .two-col-equal {
+    grid-template-columns: 1fr;
+  }
+
+  .trending-grid,
+  .trending-stats {
     grid-template-columns: 1fr;
   }
 }

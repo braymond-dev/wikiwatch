@@ -2,6 +2,7 @@ import { LeaderboardTable } from "@/components/LeaderboardTable";
 import { Filters } from "@/components/Filters";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { LiveOverview } from "@/components/LiveOverview";
+import { TrendingNow } from "@/components/TrendingNow";
 import { ChartCard } from "@/components/charts/ChartCard";
 import { EditsLineChart } from "@/components/charts/EditsLineChart";
 import { EditorTypeChart } from "@/components/charts/EditorTypeChart";
@@ -12,6 +13,7 @@ import {
   getEditorTypeBreakdown,
   getRecentEdits,
   getSummaryStats,
+  getTrendingPages,
   getTopPages,
   getTopWikis,
 } from "@/lib/queries";
@@ -38,6 +40,7 @@ export default async function Home({ searchParams }: HomeProps) {
     topPagesMonth,
     topPagesYear,
     topPagesAllTime,
+    trendingPages,
     editsOverTime,
     editorTypes,
     topWikis,
@@ -50,6 +53,7 @@ export default async function Home({ searchParams }: HomeProps) {
     getTopPages("month", filters, 8),
     getTopPages("year", filters, 8),
     getTopPages("all", filters, 8),
+    getTrendingPages(filters, 6),
     getEditsOverTime("week", filters),
     getEditorTypeBreakdown("month", filters),
     getTopWikis("month", filters),
@@ -127,6 +131,10 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         </div>
 
+      </section>
+
+      <section style={{ marginBottom: 24 }}>
+        <TrendingNow rows={trendingPages} />
       </section>
 
       <LiveOverview
