@@ -2,6 +2,7 @@ import { LeaderboardTable } from "@/components/LeaderboardTable";
 import { Filters } from "@/components/Filters";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { LiveOverview } from "@/components/LiveOverview";
+import { TopNav } from "@/components/TopNav";
 import { TrendingNow } from "@/components/TrendingNow";
 import { ChartCard } from "@/components/charts/ChartCard";
 import { EditsLineChart } from "@/components/charts/EditsLineChart";
@@ -36,10 +37,6 @@ export default async function Home({ searchParams }: HomeProps) {
     summary,
     availableWikis,
     topPagesToday,
-    topPagesWeek,
-    topPagesMonth,
-    topPagesYear,
-    topPagesAllTime,
     trendingPages,
     editsOverTime,
     editorTypes,
@@ -49,10 +46,6 @@ export default async function Home({ searchParams }: HomeProps) {
     getSummaryStats(filters),
     getAvailableWikis(),
     getTopPages("day", filters, 8),
-    getTopPages("week", filters, 8),
-    getTopPages("month", filters, 8),
-    getTopPages("year", filters, 8),
-    getTopPages("all", filters, 8),
     getTrendingPages(filters, 6),
     getEditsOverTime("week", filters),
     getEditorTypeBreakdown("month", filters),
@@ -94,6 +87,9 @@ export default async function Home({ searchParams }: HomeProps) {
           <div className="eyebrow">Live Wikimedia Analytics</div>
           <div style={{ marginTop: 14 }}>
             <AutoRefresh intervalMs={60000} />
+          </div>
+          <div style={{ marginTop: 16, marginBottom: 18 }}>
+            <TopNav current="home" />
           </div>
           <div
             className="hero-grid"
@@ -141,18 +137,19 @@ export default async function Home({ searchParams }: HomeProps) {
         initialSummary={summary}
         initialRecentEdits={recentEdits}
         initialTopPagesToday={topPagesToday}
+        showTopPagesToday={false}
       />
 
       <section className="two-col-wide" style={{ marginBottom: 24 }}>
         <ChartCard
-          title="Edits Over Time"
+          title="Edits Over Time Last 7 Days"
           subtitle="Seven-day edit volume using hourly rollups for a crisp trend view."
         >
           <EditsLineChart data={editsOverTime} />
         </ChartCard>
 
         <ChartCard
-          title="Editor Types"
+          title="Editor Types This Month"
           subtitle="Month-to-date mix of registered, temporary-account, and bot edits."
         >
           <EditorTypeChart data={editorTypes} />
@@ -161,33 +158,17 @@ export default async function Home({ searchParams }: HomeProps) {
 
       <section className="two-col-equal" style={{ marginBottom: 24 }}>
         <ChartCard
-          title="Top Wikis"
+          title="Top Wikis This Month"
           subtitle="Most active wiki projects this month."
         >
           <WikiBarChart data={topWikis} />
         </ChartCard>
-      </section>
-
-      <section className="two-col-equal">
         <LeaderboardTable
-          title="Top Pages This Week"
-          subtitle="Current week leaderboard using rollup aggregates."
-          rows={topPagesWeek}
-        />
-        <LeaderboardTable
-          title="Top Pages This Month"
-          subtitle="Month-to-date leaders across the selected wiki scope."
-          rows={topPagesMonth}
-        />
-        <LeaderboardTable
-          title="Top Pages This Year"
-          subtitle="Year-to-date activity for the most edited pages."
-          rows={topPagesYear}
-        />
-        <LeaderboardTable
-          title="Top Pages All Time"
-          subtitle="Cumulative leaders across all ingested history so far."
-          rows={topPagesAllTime}
+          title="Top Pages Today"
+          subtitle="A quick peek at the current UTC day leaders."
+          rows={topPagesToday.slice(0, 5)}
+          footerHref="/leaderboards"
+          footerLabel="See all leaderboard views"
         />
       </section>
     </main>

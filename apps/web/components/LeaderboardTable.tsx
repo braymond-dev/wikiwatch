@@ -1,3 +1,6 @@
+import Link from "next/link";
+import type { Route } from "next";
+
 import { TopPageRow } from "@/lib/types";
 import { buildWikiPageUrl } from "@/lib/wiki-links";
 
@@ -5,12 +8,16 @@ type LeaderboardTableProps = {
   title: string;
   subtitle: string;
   rows: TopPageRow[];
+  footerHref?: Route;
+  footerLabel?: string;
 };
 
 export function LeaderboardTable({
   title,
   subtitle,
   rows,
+  footerHref,
+  footerLabel,
 }: LeaderboardTableProps) {
   return (
     <section className="glass-card" style={{ padding: 20, borderRadius: 24 }}>
@@ -79,6 +86,13 @@ export function LeaderboardTable({
           </tbody>
         </table>
       </div>
+      {footerHref && footerLabel ? (
+        <div style={{ marginTop: 16 }}>
+          <Link href={footerHref} className="leaderboard-footer-link">
+            {footerLabel}
+          </Link>
+        </div>
+      ) : null}
     </section>
   );
 }

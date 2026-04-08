@@ -42,6 +42,7 @@ type LiveOverviewProps = {
   initialRecentEdits: RecentEditRow[];
   initialTopPagesToday: TopPageRow[];
   intervalMs?: number;
+  showTopPagesToday?: boolean;
 };
 
 export function LiveOverview({
@@ -49,6 +50,7 @@ export function LiveOverview({
   initialRecentEdits,
   initialTopPagesToday,
   intervalMs = 5000,
+  showTopPagesToday = true,
 }: LiveOverviewProps) {
   const searchParams = useSearchParams();
   const [data, setData] = useState<LiveOverviewPayload>({
@@ -156,13 +158,15 @@ export function LiveOverview({
 
       <RecentEditsTable rows={data.recentEdits} />
 
-      <section style={{ marginTop: 24 }}>
-        <LeaderboardTable
-          title="Top Pages Today"
-          subtitle="Most edited pages in the current UTC day, refreshed every few seconds."
-          rows={data.topPagesToday}
-        />
-      </section>
+      {showTopPagesToday ? (
+        <section style={{ marginTop: 24 }}>
+          <LeaderboardTable
+            title="Top Pages Today"
+            subtitle="Most edited pages in the current UTC day, refreshed every few seconds."
+            rows={data.topPagesToday}
+          />
+        </section>
+      ) : null}
     </>
   );
 }
