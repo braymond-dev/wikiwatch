@@ -112,6 +112,95 @@ select {
   color: #a6f7da;
 }
 
+.compact-board-shell {
+  height: 100%;
+}
+
+.compact-board-list {
+  display: grid;
+  gap: 12px;
+}
+
+.compact-board-empty {
+  padding: 10px 2px 2px;
+}
+
+.compact-board-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid rgba(175, 214, 255, 0.1);
+}
+
+.compact-board-item:first-child {
+  border-top: none;
+  padding-top: 2px;
+}
+
+.compact-board-rank {
+  color: rgba(119, 240, 194, 0.78);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.compact-board-main {
+  min-width: 0;
+}
+
+.compact-board-link {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.06rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: rgba(119, 240, 194, 0.28);
+  text-underline-offset: 0.16em;
+}
+
+.compact-board-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.compact-board-side {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.compact-board-side-label {
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.compact-board-side-value {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.compact-board-human {
+  color: var(--accent);
+}
+
+.compact-board-bot {
+  color: var(--accent-warm);
+}
+
 .stats-grid {
   display: grid;
   gap: 16px;
@@ -121,6 +210,10 @@ select {
 .trending-shell {
   padding: 20px;
   border-radius: 24px;
+}
+
+.trending-shell-compact {
+  height: 100%;
 }
 
 .trending-header {
@@ -151,6 +244,10 @@ select {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.trending-grid-compact {
+  grid-template-columns: 1fr;
+}
+
 .trending-card {
   position: relative;
   display: grid;
@@ -162,6 +259,10 @@ select {
   background:
     radial-gradient(circle at top right, rgba(119, 240, 194, 0.12), transparent 32%),
     linear-gradient(180deg, rgba(12, 24, 41, 0.9), rgba(8, 17, 30, 0.92));
+}
+
+.trending-grid-compact .trending-card {
+  min-height: unset;
 }
 
 .trending-rank {
@@ -364,6 +465,15 @@ select {
   .two-col-wide,
   .two-col-equal {
     grid-template-columns: 1fr;
+  }
+
+  .compact-board-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .compact-board-side {
+    text-align: left;
   }
 
   .trending-grid,

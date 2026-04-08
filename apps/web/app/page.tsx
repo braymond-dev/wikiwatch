@@ -46,7 +46,7 @@ export default async function Home({ searchParams }: HomeProps) {
     getSummaryStats(filters),
     getAvailableWikis(),
     getTopPages("day", filters, 8),
-    getTrendingPages(filters, 6),
+    getTrendingPages(filters, 5),
     getEditsOverTime("week", filters),
     getEditorTypeBreakdown("month", filters),
     getTopWikis("month", filters),
@@ -129,8 +129,16 @@ export default async function Home({ searchParams }: HomeProps) {
 
       </section>
 
-      <section style={{ marginBottom: 24 }}>
-        <TrendingNow rows={trendingPages} />
+      <section className="two-col-equal" style={{ marginBottom: 24 }}>
+        <TrendingNow rows={trendingPages} compact />
+        <LeaderboardTable
+          title="Top Pages Today"
+          subtitle="A quick peek at the current UTC day leaders."
+          rows={topPagesToday.slice(0, 5)}
+          footerHref="/leaderboards"
+          footerLabel="See all leaderboard views"
+          compact
+        />
       </section>
 
       <LiveOverview
@@ -163,13 +171,6 @@ export default async function Home({ searchParams }: HomeProps) {
         >
           <WikiBarChart data={topWikis} />
         </ChartCard>
-        <LeaderboardTable
-          title="Top Pages Today"
-          subtitle="A quick peek at the current UTC day leaders."
-          rows={topPagesToday.slice(0, 5)}
-          footerHref="/leaderboards"
-          footerLabel="See all leaderboard views"
-        />
       </section>
     </main>
   );
