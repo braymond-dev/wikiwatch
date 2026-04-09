@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { AppChrome } from "@/components/AppChrome";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,7 +17,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <div className="page-shell app-shell">
+          <AppChrome />
+          <div className="app-content">{children}</div>
+        </div>
+      </body>
     </html>
   );
 }

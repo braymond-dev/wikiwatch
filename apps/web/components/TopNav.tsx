@@ -1,20 +1,26 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 
-type TopNavProps = {
-  current: "home" | "leaderboards";
-};
+export function TopNav() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const current = pathname === "/leaderboards" ? "leaderboards" : "home";
+  const query = searchParams.toString();
+  const overviewHref = query ? `/?${query}` : "/";
+  const leaderboardsHref = query ? `/leaderboards?${query}` : "/leaderboards";
 
-export function TopNav({ current }: TopNavProps) {
   return (
     <nav className="top-nav">
       <Link
-        href="/"
+        href={overviewHref}
         className={`top-nav-link ${current === "home" ? "top-nav-link-active" : ""}`}
       >
         Overview
       </Link>
       <Link
-        href="/leaderboards"
+        href={leaderboardsHref}
         className={`top-nav-link ${current === "leaderboards" ? "top-nav-link-active" : ""}`}
       >
         Leaderboards

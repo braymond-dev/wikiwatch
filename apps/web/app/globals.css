@@ -50,6 +50,78 @@ select {
   padding: 24px 0 48px;
 }
 
+.app-shell {
+  display: grid;
+  gap: 24px;
+}
+
+.app-content {
+  min-height: 420px;
+}
+
+.app-chrome {
+  position: sticky;
+  top: 16px;
+  z-index: 20;
+  display: grid;
+  gap: 18px;
+  padding: 24px clamp(18px, 3vw, 32px);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(119, 240, 194, 0.12), transparent 30%),
+    radial-gradient(circle at left center, rgba(127, 194, 255, 0.12), transparent 34%),
+    var(--bg-card);
+}
+
+.app-chrome-copy {
+  display: grid;
+  gap: 14px;
+}
+
+.app-chrome-brand-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.app-chrome-title {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+}
+
+.app-chrome-subtitle {
+  margin: 10px 0 0;
+  max-width: 760px;
+  color: var(--muted);
+  font-size: clamp(0.98rem, 1.25vw, 1.05rem);
+  line-height: 1.65;
+}
+
+.app-chrome-refresh {
+  flex: 0 0 auto;
+  padding-top: 4px;
+}
+
+.page-loading-shell {
+  min-height: 240px;
+  padding: 28px;
+  border-radius: 28px;
+}
+
+.page-loading-title {
+  margin: 18px 0 8px;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+}
+
+.page-loading-copy {
+  margin: 0;
+}
+
 .glass-card {
   border: 1px solid var(--border);
   background: var(--bg-card);
@@ -454,6 +526,23 @@ select {
   .page-shell {
     width: min(100% - 20px, 1400px);
     padding-top: 18px;
+  }
+
+  .app-shell {
+    gap: 18px;
+  }
+
+  .app-chrome {
+    top: 10px;
+    padding: 18px;
+  }
+
+  .app-chrome-brand-row {
+    flex-direction: column;
+  }
+
+  .app-chrome-refresh {
+    padding-top: 0;
   }
 
   .chart-shell {

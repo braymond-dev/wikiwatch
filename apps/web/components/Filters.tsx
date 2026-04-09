@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState, useTransition } from "react";
 
@@ -10,7 +10,7 @@ type FiltersProps = {
 
 export function Filters({ availableWikis }: FiltersProps) {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
 
   const [wiki, setWiki] = useState(searchParams.get("wiki") ?? "");
@@ -41,13 +41,14 @@ export function Filters({ availableWikis }: FiltersProps) {
       next.delete("includeBots");
     }
     startTransition(() => {
-      router.push(`/?${next.toString()}`);
+      const target = next.toString() ? `${pathname}?${next.toString()}` : pathname;
+      window.location.assign(target);
     });
   }
 
   function reset() {
     startTransition(() => {
-      router.push("/");
+      window.location.assign(pathname);
     });
   }
 
