@@ -122,6 +122,31 @@ select {
   margin: 0;
 }
 
+.filters-loading-note {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.filters-fallback-line {
+  height: 46px;
+  border: 1px solid rgba(175, 214, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(5, 11, 21, 0.34);
+}
+
+.filters-fallback-button {
+  width: 108px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(175, 214, 255, 0.12);
+  background: rgba(9, 18, 31, 0.45);
+}
+
+.filters-fallback-button-primary {
+  background: linear-gradient(135deg, rgba(119, 240, 194, 0.42), rgba(31, 184, 139, 0.36));
+  border: none;
+}
+
 .glass-card {
   border: 1px solid var(--border);
   background: var(--bg-card);

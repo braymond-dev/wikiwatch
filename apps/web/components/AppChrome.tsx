@@ -1,10 +1,12 @@
-import { AutoRefresh } from "@/components/AutoRefresh";
-import { Filters } from "@/components/Filters";
-import { TopNav } from "@/components/TopNav";
-import { getAvailableWikis } from "@/lib/queries";
+"use client";
 
-export async function AppChrome() {
-  const availableWikis = await getAvailableWikis();
+import { Suspense } from "react";
+
+import { AutoRefresh } from "@/components/AutoRefresh";
+import { FiltersShell } from "@/components/FiltersShell";
+import { TopNav } from "@/components/TopNav";
+
+export function AppChrome() {
   const appName = process.env.NEXT_PUBLIC_APP_NAME || "WikiWatch";
 
   return (
@@ -40,7 +42,9 @@ export async function AppChrome() {
           <AutoRefresh intervalMs={60000} />
         </div>
         <div style={{ marginTop: 16, marginBottom: 18 }}>
-          <TopNav />
+          <Suspense fallback={<HeaderNavFallback />}>
+            <TopNav />
+          </Suspense>
         </div>
         <div
           className="hero-grid"
@@ -74,9 +78,47 @@ export async function AppChrome() {
               Wikimedia EventStreams in near real time.
             </p>
           </div>
-          <Filters availableWikis={availableWikis} />
+          <Suspense fallback={<FiltersFallback />}>
+            <FiltersShell />
+          </Suspense>
         </div>
       </div>
     </section>
+  );
+}
+
+function HeaderNavFallback() {
+  return (
+    <nav className="top-nav">
+      <span className="top-nav-link top-nav-link-active">Overview</span>
+      <span className="top-nav-link">Leaderboards</span>
+    </nav>
+  );
+}
+
+function FiltersFallback() {
+  return (
+    <div
+      className="glass-card"
+      style={{
+        padding: 18,
+        borderRadius: 22,
+        display: "grid",
+        gap: 12,
+      }}
+    >
+      <div style={{ display: "grid", gap: 8 }}>
+        <label style={{ fontSize: 13, color: "var(--muted)" }}>Wiki Project</label>
+        <div className="filters-fallback-line" />
+      </div>
+      <div style={{ display: "grid", gap: 8 }}>
+        <label style={{ fontSize: 13, color: "var(--muted)" }}>Bot Activity</label>
+        <div className="filters-fallback-line" />
+      </div>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div className="filters-fallback-button filters-fallback-button-primary" />
+        <div className="filters-fallback-button" />
+      </div>
+    </div>
   );
 }
