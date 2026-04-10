@@ -63,3 +63,14 @@ export type TrendingPageRow = {
   botEdits: number;
   humanEdits: number;
 };
+
+export type PeakAnnotation = {
+  bucket: string;
+  totalEdits: number;
+  pages: TopPageRow[];
+};
+
+export type AnnotatedMonthlyEdits = {
+  series: TimeSeriesPoint[];
+  peaks: PeakAnnotation[];
+};

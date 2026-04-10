@@ -1,11 +1,13 @@
 import { LeaderboardTable } from "@/components/LeaderboardTable";
 import { LiveOverview } from "@/components/LiveOverview";
 import { TrendingNow } from "@/components/TrendingNow";
+import { AnnotatedMonthlyEditsChart } from "@/components/charts/AnnotatedMonthlyEditsChart";
 import { ChartCard } from "@/components/charts/ChartCard";
 import { EditsLineChart } from "@/components/charts/EditsLineChart";
 import { EditorTypeChart } from "@/components/charts/EditorTypeChart";
 import { WikiBarChart } from "@/components/charts/WikiBarChart";
 import {
+  getAnnotatedMonthlyEdits,
   getEditsOverTime,
   getEditorTypeBreakdown,
   getRecentEdits,
@@ -33,6 +35,7 @@ export default async function Home({ searchParams }: HomeProps) {
     summary,
     topPagesToday,
     trendingPages,
+    annotatedMonthlyEdits,
     editsOverTime,
     editorTypes,
     topWikis,
@@ -41,6 +44,7 @@ export default async function Home({ searchParams }: HomeProps) {
     getSummaryStats(filters),
     getTopPages("day", filters, 8),
     getTrendingPages(filters, 5),
+    getAnnotatedMonthlyEdits(filters),
     getEditsOverTime("week", filters),
     getEditorTypeBreakdown("month", filters),
     getTopWikis("month", { includeBots: filters.includeBots }),
@@ -66,6 +70,15 @@ export default async function Home({ searchParams }: HomeProps) {
         initialTopPagesToday={topPagesToday}
         showTopPagesToday={false}
       />
+
+      <section style={{ marginBottom: 24 }}>
+        <ChartCard
+          title="Annotated Activity Last 30 Days"
+          subtitle="Daily edit volume with the biggest monthly spikes labeled by the top pages driving each peak."
+        >
+          <AnnotatedMonthlyEditsChart data={annotatedMonthlyEdits} />
+        </ChartCard>
+      </section>
 
       <section className="two-col-wide" style={{ marginBottom: 24 }}>
         <ChartCard

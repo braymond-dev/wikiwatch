@@ -2,8 +2,10 @@ import "server-only";
 
 import { getPool } from "@/lib/db";
 import {
+  AnnotatedMonthlyEdits,
   DashboardFilters,
   EditorTypeRow,
+  PeakAnnotation,
   RangeKey,
   RecentEditRow,
   SummaryStats,
@@ -466,4 +468,118 @@ export async function getAvailableWikis(): Promise<string[]> {
     `,
   );
   return result.rows.map((row) => row.wiki as string);
+}
+
+function selectPeakBuckets(
+  series: TimeSeriesPoint[],
+  limit: number,
+): Array<{ bucket: string; totalEdits: number }> {
+  const candidates = series
+    .map((point, index) => {
+      const previous = series[index - 1]?.totalEdits ?? -1;
+      const next = series[index + 1]?.totalEdits ?? -1;
+      const isLocalPeak =
+        index > 0 &&
+        index < series.length - 1 &&
+        point.totalEdits >= previous &&
+        point.totalEdits >= next &&
+        (point.totalEdits > previous || point.totalEdits > next);
+
+      const prominence = point.totalEdits - Math.max(previous, next, 0);
+
+      return {
+        bucket: point.bucket,
+        totalEdits: point.totalEdits,
+        prominence,
+        isLocalPeak,
+      };
+    })
+    .filter((point) => point.totalEdits > 0 && (point.isLocalPeak || point.prominence > 0))
+    .sort((left, right) => {
+      if (right.prominence !== left.prominence) {
+        return right.prominence - left.prominence;
+      }
+      return right.totalEdits - left.totalEdits;
+    });
+
+  const selected: Array<{ bucket: string; totalEdits: number }> = [];
+
+  for (const candidate of candidates) {
+    const candidateDate = new Date(`${candidate.bucket}T00:00:00Z`);
+    const tooClose = selected.some((existing) => {
+      const existingDate = new Date(`${existing.bucket}T00:00:00Z`);
+      const distanceDays = Math.abs(
+        Math.round((candidateDate.getTime() - existingDate.getTime()) / 86400000),
+      );
+      return distanceDays < 3;
+    });
+
+    if (!tooClose) {
+      selected.push({
+        bucket: candidate.bucket,
+        totalEdits: candidate.totalEdits,
+      });
+    }
+
+    if (selected.length === limit) {
+      break;
+    }
+  }
+
+  return selected.sort((left, right) => left.bucket.localeCompare(right.bucket));
+}
+
+export async function getAnnotatedMonthlyEdits(
+  filters: DashboardFilters = {},
+  peakLimit = 4,
+  pagesPerPeak = 3,
+): Promise<AnnotatedMonthlyEdits> {
+  const series = await getEditsOverTime("month", filters);
+  const peakBuckets = selectPeakBuckets(series, peakLimit);
+
+  if (peakBuckets.length === 0) {
+    return { series, peaks: [] };
+  }
+
+  const pool = getPool();
+
+  const peaks = await Promise.all(
+    peakBuckets.map(async (peak): Promise<PeakAnnotation> => {
+      const wikiFilter = applyWikiScope(2, filters.wiki);
+      const limitIndex = wikiFilter.values.length + 2;
+      const result = await pool.query<TopPageRow>(
+        `
+          SELECT
+            page_title AS "pageTitle",
+            wiki,
+            CASE
+              WHEN $${limitIndex + 1}::boolean = false THEN human_edits
+              ELSE edit_count
+            END AS "editCount",
+            bot_edits AS "botEdits",
+            human_edits AS "humanEdits"
+          FROM top_pages_daily
+          WHERE period_start = $1::date
+          ${wikiFilter.sql}
+          ${buildBotClause(filters.includeBots, "")}
+          ORDER BY rank ASC, "pageTitle" ASC
+          LIMIT $${limitIndex}
+        `,
+        [peak.bucket, ...wikiFilter.values, pagesPerPeak, filters.includeBots !== false],
+      );
+
+      const pages = await enrichTopPageRowsWithWikidataLabels(result.rows);
+
+      return {
+        bucket: peak.bucket,
+        totalEdits: peak.totalEdits,
+        pages,
+      };
+    }),
+  );
+
+  return {
+    series,
+    peaks,
+  };
 }
