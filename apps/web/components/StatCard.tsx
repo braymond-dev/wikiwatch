@@ -1,7 +1,9 @@
 type StatCardProps = {
   label: string;
   value: string;
+  sublabel?: string;
   tone?: "mint" | "amber" | "blue";
+  compact?: boolean;
 };
 
 const toneMap = {
@@ -19,24 +21,37 @@ const toneMap = {
   },
 };
 
-export function StatCard({ label, value, tone = "blue" }: StatCardProps) {
+export function StatCard({
+  label,
+  value,
+  sublabel,
+  tone = "blue",
+  compact = false,
+}: StatCardProps) {
   return (
     <div
       className="glass-card"
       style={{
-        padding: 20,
+        padding: compact ? 16 : 20,
         borderRadius: 22,
         background: toneMap[tone].background,
         borderColor: toneMap[tone].borderColor,
       }}
     >
-      <div className="muted" style={{ fontSize: 14, marginBottom: 12 }}>
+      <div className="muted" style={{ fontSize: compact ? 13 : 14, marginBottom: sublabel ? 6 : 12 }}>
         {label}
       </div>
+      {sublabel ? (
+        <div className="muted" style={{ fontSize: 12, marginBottom: 12 }}>
+          {sublabel}
+        </div>
+      ) : null}
       <div
         style={{
           fontFamily: "var(--font-display), sans-serif",
-          fontSize: "clamp(1.8rem, 3vw, 2.7rem)",
+          fontSize: compact
+            ? "clamp(1.45rem, 2.1vw, 2.15rem)"
+            : "clamp(1.8rem, 3vw, 2.7rem)",
           fontWeight: 700,
           lineHeight: 1,
         }}
@@ -46,4 +61,3 @@ export function StatCard({ label, value, tone = "blue" }: StatCardProps) {
     </div>
   );
 }
-

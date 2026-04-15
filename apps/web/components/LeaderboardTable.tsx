@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 
-import { TopPageRow } from "@/lib/types";
+import type { TopPageRow } from "@/lib/types";
 import { buildWikiPageUrl } from "@/lib/wiki-links";
 
 type LeaderboardTableProps = {

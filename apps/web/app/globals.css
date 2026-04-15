@@ -304,6 +304,22 @@ select {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.hero-stats-wrap {
+  margin-top: 22px;
+  display: grid;
+  gap: 10px;
+}
+
+.hero-stats-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.hero-stats-note {
+  font-size: 12px;
+}
+
 .trending-shell {
   padding: 20px;
   border-radius: 24px;
@@ -575,6 +591,7 @@ select {
   }
 
   .hero-grid,
+  .hero-stats-grid,
   .stats-grid,
   .two-col-wide,
   .two-col-equal {

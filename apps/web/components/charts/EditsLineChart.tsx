@@ -11,8 +11,8 @@ import {
   YAxis,
 } from "recharts";
 
-import { TimeSeriesPoint } from "@/lib/types";
 import { tooltipTheme } from "@/components/charts/tooltip-theme";
+import type { TimeSeriesPoint } from "@/lib/types";
 
 type EditsLineChartProps = {
   data: TimeSeriesPoint[];

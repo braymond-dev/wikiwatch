@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { RecentEditRow } from "@/lib/types";
+import type { RecentEditRow } from "@/lib/types";
 import { buildWikiPageUrl } from "@/lib/wiki-links";
 
 type RecentEditsTableProps = {

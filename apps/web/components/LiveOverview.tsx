@@ -5,8 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { LeaderboardTable } from "@/components/LeaderboardTable";
 import { RecentEditsTable } from "@/components/RecentEditsTable";
-import { StatCard } from "@/components/StatCard";
-import { RecentEditRow, SummaryStats, TopPageRow } from "@/lib/types";
+import type { RecentEditRow, SummaryStats, TopPageRow } from "@/lib/types";
 
 type LiveOverviewPayload = {
   summary: SummaryStats;
@@ -58,7 +57,6 @@ export function LiveOverview({
     recentEdits: initialRecentEdits,
     topPagesToday: initialTopPagesToday,
   });
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -80,8 +78,6 @@ export function LiveOverview({
       if (document.visibilityState !== "visible") {
         return;
       }
-
-      setIsRefreshing(true);
       try {
         const response = await fetch(
           `/api/live-overview${queryString ? `?${queryString}` : ""}`,
@@ -99,10 +95,8 @@ export function LiveOverview({
             recentEdits: mergeRecentEdits(previous.recentEdits, payload.data.recentEdits),
           }));
         }
-      } finally {
-        if (!isCancelled) {
-          setIsRefreshing(false);
-        }
+      } catch {
+        return;
       }
     }
 
@@ -128,34 +122,6 @@ export function LiveOverview({
 
   return (
     <>
-      <section style={{ display: "grid", gap: 16, marginBottom: 24 }}>
-        <div className="stats-grid">
-          <StatCard
-            label="Edits Today"
-            value={data.summary.editsToday.toLocaleString()}
-            tone="mint"
-          />
-          <StatCard
-            label="Edits This Week"
-            value={data.summary.editsThisWeek.toLocaleString()}
-            tone="blue"
-          />
-          <StatCard
-            label="Active Wikis Today"
-            value={data.summary.activeWikisToday.toLocaleString()}
-            tone="amber"
-          />
-          <StatCard
-            label="Bot Share Today"
-            value={`${data.summary.botShareToday}%`}
-            tone="blue"
-          />
-        </div>
-        <div className="muted" style={{ fontSize: 13 }}>
-          {isRefreshing ? "Refreshing quick stats..." : "Quick stats refresh every 5 seconds."}
-        </div>
-      </section>
-
       <RecentEditsTable rows={data.recentEdits} />
 
       {showTopPagesToday ? (

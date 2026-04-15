@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { FiltersShell } from "@/components/FiltersShell";
+import { HeroStats } from "@/components/HeroStats";
 import { TopNav } from "@/components/TopNav";
 
 export function AppChrome() {
@@ -82,6 +83,9 @@ export function AppChrome() {
             <FiltersShell />
           </Suspense>
         </div>
+        <Suspense fallback={<HeroStatsFallback />}>
+          <HeroStats />
+        </Suspense>
       </div>
     </section>
   );
@@ -118,6 +122,29 @@ function FiltersFallback() {
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <div className="filters-fallback-button filters-fallback-button-primary" />
         <div className="filters-fallback-button" />
+      </div>
+    </div>
+  );
+}
+
+function HeroStatsFallback() {
+  return (
+    <div className="hero-stats-wrap">
+      <div className="hero-stats-grid">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="glass-card"
+            style={{
+              padding: 16,
+              borderRadius: 22,
+            }}
+          >
+            <div className="filters-fallback-line" style={{ height: 12, marginBottom: 10 }} />
+            <div className="filters-fallback-line" style={{ height: 10, marginBottom: 14 }} />
+            <div className="filters-fallback-line" style={{ height: 34 }} />
+          </div>
+        ))}
       </div>
     </div>
   );
