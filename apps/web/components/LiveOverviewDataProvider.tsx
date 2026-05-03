@@ -19,6 +19,7 @@ type LiveOverviewContextValue = {
 const LiveOverviewDataContext = createContext<LiveOverviewContextValue | null>(null);
 
 const MAX_RECENT_EDITS = 40;
+export const DEFAULT_LIVE_OVERVIEW_INTERVAL_MS = 5000;
 
 function mergeRecentEdits(
   previousRows: RecentEditRow[],
@@ -48,7 +49,7 @@ type LiveOverviewDataProviderProps = {
 
 export function LiveOverviewDataProvider({
   children,
-  intervalMs = 5000,
+  intervalMs = DEFAULT_LIVE_OVERVIEW_INTERVAL_MS,
 }: LiveOverviewDataProviderProps) {
   const searchParams = useSearchParams();
   const [data, setData] = useState<LiveOverviewPayload | null>(null);

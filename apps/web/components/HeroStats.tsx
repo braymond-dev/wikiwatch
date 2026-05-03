@@ -2,7 +2,10 @@
 
 import { useSearchParams } from "next/navigation";
 
-import { useLiveOverviewData } from "@/components/LiveOverviewDataProvider";
+import {
+  DEFAULT_LIVE_OVERVIEW_INTERVAL_MS,
+  useLiveOverviewData,
+} from "@/components/LiveOverviewDataProvider";
 import { StatCard } from "@/components/StatCard";
 import type { SummaryStats } from "@/lib/types";
 
@@ -16,6 +19,7 @@ const EMPTY_SUMMARY: SummaryStats = {
 export function HeroStats() {
   const searchParams = useSearchParams();
   const liveOverview = useLiveOverviewData();
+  const refreshSeconds = Math.floor(DEFAULT_LIVE_OVERVIEW_INTERVAL_MS / 1000);
 
   const scopeLabel = searchParams.get("wiki") || "All public wikis";
   const summary = liveOverview?.data?.summary ?? EMPTY_SUMMARY;
@@ -54,7 +58,9 @@ export function HeroStats() {
         />
       </div>
       <div className="muted hero-stats-note">
-        {isLoaded ? "Quick stats refresh every 5 seconds." : "Loading quick stats..."}
+        {isLoaded
+          ? `Quick stats refresh every ${refreshSeconds} seconds.`
+          : "Loading quick stats..."}
       </div>
     </div>
   );
