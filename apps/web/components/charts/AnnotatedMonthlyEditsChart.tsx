@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   CartesianGrid,
   ComposedChart,
+  Legend,
   Line,
   ReferenceLine,
   ResponsiveContainer,
@@ -209,6 +210,17 @@ function MonthlyTooltip({
       <div style={{ fontWeight: 700, marginBottom: maybePeak ? 10 : 0 }}>
         {formatCompactNumber(point.totalEdits)} edits
       </div>
+      <div style={{ display: "grid", gap: 4, marginBottom: maybePeak ? 10 : 0 }}>
+        <div style={{ color: "#7fc2ff", fontSize: 12 }}>
+          Registered: {formatCompactNumber(point.registeredEdits)}
+        </div>
+        <div style={{ color: "#f08ae8", fontSize: 12 }}>
+          Temporary: {formatCompactNumber(point.tempAccountEdits)}
+        </div>
+        <div style={{ color: "#ffb36b", fontSize: 12 }}>
+          Bot: {formatCompactNumber(point.botEdits)}
+        </div>
+      </div>
       {maybePeak ? (
         <div style={{ display: "grid", gap: 6 }}>
           {maybePeak.pages.map((page) => (
@@ -284,6 +296,7 @@ export function AnnotatedEditsChart({
             domain={[0, (max: number) => withChartHeadroom(max)]}
           />
           <Tooltip content={<MonthlyTooltip />} />
+          <Legend />
           <ReferenceLine y={0} stroke="rgba(175,214,255,0.12)" />
           <Line
             type="monotone"
@@ -292,6 +305,27 @@ export function AnnotatedEditsChart({
             strokeWidth={3}
             dot={false}
             activeDot={{ r: 6, fill: "#77f0c2", stroke: "#07111f", strokeWidth: 2 }}
+          />
+          <Line
+            type="monotone"
+            dataKey="registeredEdits"
+            stroke="#7fc2ff"
+            strokeWidth={2}
+            dot={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="tempAccountEdits"
+            stroke="#f08ae8"
+            strokeWidth={2}
+            dot={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="botEdits"
+            stroke="#ffb36b"
+            strokeWidth={2}
+            dot={false}
           />
           <Scatter
             data={peakData}
