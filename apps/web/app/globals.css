@@ -492,6 +492,15 @@ select {
   height: 420px;
 }
 
+.annotated-chart-stack {
+  position: relative;
+}
+
+.annotated-chart-overlay {
+  position: absolute;
+  inset: 0;
+}
+
 .annotated-activity-shell {
   display: grid;
   gap: 14px;

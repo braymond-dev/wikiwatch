@@ -10,12 +10,10 @@ import {
   ReferenceLine,
   ResponsiveContainer,
   Scatter,
-  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
-import { tooltipTheme } from "@/components/charts/tooltip-theme";
 import { buildWikiPageUrl } from "@/lib/wiki-links";
 import type { AnnotatedEditsData, PeakAnnotation, TimeSeriesPoint } from "@/lib/types";
 
@@ -181,65 +179,6 @@ function PeakBubble({
   );
 }
 
-function MonthlyTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: Array<{ payload: TimeSeriesPoint | PeakPoint }>;
-  label?: string;
-}) {
-  if (!active || !payload || payload.length === 0 || !label) {
-    return null;
-  }
-
-  const point = payload[0]?.payload as TimeSeriesPoint | undefined;
-  const maybePeak = payload.find(
-    (entry) => "pages" in entry.payload,
-  )?.payload as PeakPoint | undefined;
-
-  if (!point) {
-    return null;
-  }
-
-  return (
-    <div style={tooltipTheme.contentStyle}>
-      <div style={{ ...tooltipTheme.labelStyle, marginBottom: 8 }}>
-        {formatBucketLabel(label)}
-      </div>
-      <div style={{ fontWeight: 700, marginBottom: maybePeak ? 10 : 0 }}>
-        {formatCompactNumber(point.totalEdits)} edits
-      </div>
-      <div style={{ display: "grid", gap: 4, marginBottom: maybePeak ? 10 : 0 }}>
-        <div style={{ color: "#7fc2ff", fontSize: 12 }}>
-          Registered: {formatCompactNumber(point.registeredEdits)}
-        </div>
-        <div style={{ color: "#f08ae8", fontSize: 12 }}>
-          Temporary: {formatCompactNumber(point.tempAccountEdits)}
-        </div>
-        <div style={{ color: "#ffb36b", fontSize: 12 }}>
-          Bot: {formatCompactNumber(point.botEdits)}
-        </div>
-      </div>
-      {maybePeak ? (
-        <div style={{ display: "grid", gap: 6 }}>
-          {maybePeak.pages.map((page) => (
-            <div key={`${page.wiki}:${page.pageTitle}`}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>
-                {page.displayTitle ?? page.pageTitle}
-              </div>
-              <div style={{ color: "#99abc2", fontSize: 12 }}>
-                {page.wiki} · {formatCompactNumber(page.editCount)}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 export function AnnotatedEditsChart({
   data,
   showAnnotations = true,
@@ -276,14 +215,13 @@ export function AnnotatedEditsChart({
         pages: peak.pages,
       }))
     : [];
+  const seriesMax = data.series.reduce((max, point) => Math.max(max, point.totalEdits), 0);
+  const yDomainMax = withChartHeadroom(seriesMax);
 
   return (
-    <div className="chart-shell chart-shell-tall" ref={shellRef}>
+    <div className="chart-shell chart-shell-tall annotated-chart-stack" ref={shellRef}>
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart
-          data={data.series}
-          margin={CHART_MARGIN}
-        >
+        <ComposedChart data={data.series} margin={CHART_MARGIN}>
           <CartesianGrid stroke="rgba(175,214,255,0.08)" vertical={false} />
           <XAxis
             dataKey="bucket"
@@ -297,9 +235,8 @@ export function AnnotatedEditsChart({
             tickLine={false}
             width={58}
             tickFormatter={formatCompactNumber}
-            domain={[0, (max: number) => withChartHeadroom(max)]}
+            domain={[0, yDomainMax]}
           />
-          <Tooltip content={<MonthlyTooltip />} />
           <Legend />
           <ReferenceLine y={0} stroke="rgba(175,214,255,0.12)" />
           <Line
@@ -331,18 +268,26 @@ export function AnnotatedEditsChart({
             strokeWidth={2}
             dot={false}
           />
-          {showAnnotations ? (
-            <Scatter
-              data={peakData}
-              dataKey="totalEdits"
-              shape={(props: { cx?: number; cy?: number; payload?: PeakPoint }) => (
-                <PeakBubble {...props} chartWidth={chartWidth} />
-              )}
-              isAnimationActive={false}
-            />
-          ) : null}
         </ComposedChart>
       </ResponsiveContainer>
+      {showAnnotations ? (
+        <div className="annotated-chart-overlay" aria-hidden="true">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={data.series} margin={CHART_MARGIN}>
+              <XAxis dataKey="bucket" hide />
+              <YAxis domain={[0, yDomainMax]} hide />
+              <Scatter
+                data={peakData}
+                dataKey="totalEdits"
+                shape={(props: { cx?: number; cy?: number; payload?: PeakPoint }) => (
+                  <PeakBubble {...props} chartWidth={chartWidth} />
+                )}
+                isAnimationActive={false}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      ) : null}
     </div>
   );
 }
