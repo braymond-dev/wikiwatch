@@ -22,6 +22,7 @@ export function AnnotatedActivityToggle({
   monthData,
 }: AnnotatedActivityToggleProps) {
   const [selectedRange, setSelectedRange] = useState<RangeKey>("week");
+  const [showAnnotations, setShowAnnotations] = useState(true);
 
   const activeData = useMemo(
     () => (selectedRange === "week" ? weekData : monthData),
@@ -30,23 +31,45 @@ export function AnnotatedActivityToggle({
 
   return (
     <div className="annotated-activity-shell">
-      <div className="annotated-activity-toggle" role="tablist" aria-label="Annotated activity range">
-        {(["week", "month"] as const).map((range) => (
+      <div className="annotated-activity-controls">
+        <div className="annotated-activity-toggle" role="tablist" aria-label="Annotated activity range">
+          {(["week", "month"] as const).map((range) => (
+            <button
+              key={range}
+              type="button"
+              role="tab"
+              aria-selected={selectedRange === range}
+              className={`annotated-activity-toggle-button${
+                selectedRange === range ? " annotated-activity-toggle-button-active" : ""
+              }`}
+              onClick={() => setSelectedRange(range)}
+            >
+              {RANGE_LABELS[range]}
+            </button>
+          ))}
+        </div>
+        <div className="annotated-activity-toggle" role="group" aria-label="Annotation visibility">
           <button
-            key={range}
             type="button"
-            role="tab"
-            aria-selected={selectedRange === range}
             className={`annotated-activity-toggle-button${
-              selectedRange === range ? " annotated-activity-toggle-button-active" : ""
+              showAnnotations ? " annotated-activity-toggle-button-active" : ""
             }`}
-            onClick={() => setSelectedRange(range)}
+            onClick={() => setShowAnnotations(true)}
           >
-            {RANGE_LABELS[range]}
+            Annotations On
           </button>
-        ))}
+          <button
+            type="button"
+            className={`annotated-activity-toggle-button${
+              !showAnnotations ? " annotated-activity-toggle-button-active" : ""
+            }`}
+            onClick={() => setShowAnnotations(false)}
+          >
+            Annotations Off
+          </button>
+        </div>
       </div>
-      <AnnotatedEditsChart data={activeData} />
+      <AnnotatedEditsChart data={activeData} showAnnotations={showAnnotations} />
     </div>
   );
 }

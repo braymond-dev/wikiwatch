@@ -497,6 +497,14 @@ select {
   gap: 14px;
 }
 
+.annotated-activity-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .annotated-activity-toggle {
   display: inline-flex;
   align-items: center;
@@ -641,6 +649,11 @@ select {
   .annotated-activity-toggle {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .annotated-activity-controls {
+    display: grid;
+    gap: 10px;
   }
 
   .hero-grid,

@@ -21,6 +21,7 @@ import type { AnnotatedEditsData, PeakAnnotation, TimeSeriesPoint } from "@/lib/
 
 type AnnotatedEditsChartProps = {
   data: AnnotatedEditsData;
+  showAnnotations?: boolean;
 };
 
 type PeakPoint = {
@@ -241,6 +242,7 @@ function MonthlyTooltip({
 
 export function AnnotatedEditsChart({
   data,
+  showAnnotations = true,
 }: AnnotatedEditsChartProps) {
   const shellRef = useRef<HTMLDivElement | null>(null);
   const [chartWidth, setChartWidth] = useState(0);
@@ -267,11 +269,13 @@ export function AnnotatedEditsChart({
     };
   }, []);
 
-  const peakData: PeakPoint[] = data.peaks.map((peak) => ({
-    bucket: peak.bucket,
-    totalEdits: peak.totalEdits,
-    pages: peak.pages,
-  }));
+  const peakData: PeakPoint[] = showAnnotations
+    ? data.peaks.map((peak) => ({
+        bucket: peak.bucket,
+        totalEdits: peak.totalEdits,
+        pages: peak.pages,
+      }))
+    : [];
 
   return (
     <div className="chart-shell chart-shell-tall" ref={shellRef}>
@@ -327,14 +331,16 @@ export function AnnotatedEditsChart({
             strokeWidth={2}
             dot={false}
           />
-          <Scatter
-            data={peakData}
-            dataKey="totalEdits"
-            shape={(props: { cx?: number; cy?: number; payload?: PeakPoint }) => (
-              <PeakBubble {...props} chartWidth={chartWidth} />
-            )}
-            isAnimationActive={false}
-          />
+          {showAnnotations ? (
+            <Scatter
+              data={peakData}
+              dataKey="totalEdits"
+              shape={(props: { cx?: number; cy?: number; payload?: PeakPoint }) => (
+                <PeakBubble {...props} chartWidth={chartWidth} />
+              )}
+              isAnimationActive={false}
+            />
+          ) : null}
         </ComposedChart>
       </ResponsiveContainer>
     </div>

@@ -47,6 +47,18 @@ export default async function Home({ searchParams }: HomeProps) {
   ]);
   return (
     <>
+      <section style={{ marginBottom: 24 }}>
+        <ChartCard
+          title="Annotated Activity"
+          subtitle="The main activity view with 7-day and 30-day hourly trends, plus optional peak annotations."
+        >
+          <AnnotatedActivityToggle
+            weekData={annotatedWeekEdits}
+            monthData={annotatedMonthEdits}
+          />
+        </ChartCard>
+      </section>
+
       <section className="two-col-equal" style={{ marginBottom: 24 }}>
         <TrendingNow rows={trendingPages} compact />
         <LeaderboardTable
@@ -66,16 +78,6 @@ export default async function Home({ searchParams }: HomeProps) {
       />
 
       <section className="two-col-wide" style={{ marginBottom: 24 }}>
-        <ChartCard
-          title="Annotated Activity"
-          subtitle="Toggle between 7-day and 30-day views with the same hourly granularity."
-        >
-          <AnnotatedActivityToggle
-            weekData={annotatedWeekEdits}
-            monthData={annotatedMonthEdits}
-          />
-        </ChartCard>
-
         <ChartCard
           title="Editor Types This Month"
           subtitle="Month-to-date mix of registered, temporary-account, and bot edits."
