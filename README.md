@@ -24,7 +24,8 @@ WikiWatch is split into three deployable parts:
    - Connects to Wikimedia EventStreams SSE
    - Parses edit events safely
    - Writes raw edit rows to Postgres
-   - Updates rollup tables in batches
+   - Updates lightweight count rollups in batches
+   - Refreshes page leaderboard rollups on a slower maintenance cadence
 
 2. `apps/web`
    - Next.js App Router application
@@ -59,8 +60,10 @@ The Wikimedia stream can become large quickly. Querying only raw events for ever
   - powers longer-range charts and summary metrics
 - `current_page_counts_daily|weekly|monthly|yearly`
   - keeps full per-page counts only for the active day, week, month, and year
+  - refreshed on a slower background cadence rather than every event flush
 - `top_pages_daily|weekly|monthly|yearly`
   - stores only the top ranked leaderboard rows per wiki and period
+  - refreshed from the active current-page tables on the same slower cadence
   - defaults to the top `20` article-space pages per wiki
 
 This keeps the SQL simple and maintainable while avoiding repeated scans over the raw event table and prevents historical page-leaderboard storage from growing without bound.
@@ -200,6 +203,8 @@ All configuration is environment-driven.
   - Max seconds to wait for stream activity before reconnecting; defaults to `120`
 - `WORKER_FLUSH_INTERVAL_SECONDS`
   - Max seconds before flushing a partial batch
+- `WORKER_LEADERBOARD_REFRESH_INTERVAL_SECONDS`
+  - Max seconds between page leaderboard refreshes; defaults to `300`
 - `WORKER_RECONNECT_DELAY_SECONDS`
   - Delay before reconnecting after stream failures
 - `WORKER_LOG_LEVEL`

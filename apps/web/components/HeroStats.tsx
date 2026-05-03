@@ -1,18 +1,10 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
 
+import { useLiveOverviewData } from "@/components/LiveOverviewDataProvider";
 import { StatCard } from "@/components/StatCard";
 import type { SummaryStats } from "@/lib/types";
-
-type HeroStatsPayload = {
-  summary: SummaryStats;
-};
-
-type HeroStatsProps = {
-  intervalMs?: number;
-};
 
 const EMPTY_SUMMARY: SummaryStats = {
   editsToday: 0,
@@ -21,61 +13,13 @@ const EMPTY_SUMMARY: SummaryStats = {
   botShareToday: 0,
 };
 
-export function HeroStats({ intervalMs = 5000 }: HeroStatsProps) {
+export function HeroStats() {
   const searchParams = useSearchParams();
-  const [summary, setSummary] = useState<SummaryStats>(EMPTY_SUMMARY);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  const queryString = useMemo(() => {
-    const params = new URLSearchParams();
-    const wiki = searchParams.get("wiki");
-    const includeBots = searchParams.get("includeBots");
-    if (wiki) {
-      params.set("wiki", wiki);
-    }
-    if (includeBots) {
-      params.set("includeBots", includeBots);
-    }
-    return params.toString();
-  }, [searchParams]);
+  const liveOverview = useLiveOverviewData();
 
   const scopeLabel = searchParams.get("wiki") || "All public wikis";
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    async function refresh() {
-      try {
-        const response = await fetch(
-          `/api/live-overview${queryString ? `?${queryString}` : ""}`,
-          { cache: "no-store" },
-        );
-
-        if (!response.ok) {
-          return;
-        }
-
-        const payload = (await response.json()) as { data: HeroStatsPayload };
-        if (!isCancelled) {
-          setSummary(payload.data.summary);
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoaded(true);
-        }
-      }
-    }
-
-    void refresh();
-    const intervalId = window.setInterval(() => {
-      void refresh();
-    }, intervalMs);
-
-    return () => {
-      isCancelled = true;
-      window.clearInterval(intervalId);
-    };
-  }, [intervalMs, queryString]);
+  const summary = liveOverview?.data?.summary ?? EMPTY_SUMMARY;
+  const isLoaded = liveOverview?.isLoaded ?? false;
 
   return (
     <div className="hero-stats-wrap">

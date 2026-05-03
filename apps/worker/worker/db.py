@@ -116,6 +116,12 @@ class Database:
         self.store_raw_json = store_raw_json
         self.top_pages_limit = top_pages_limit
         self.pool: asyncpg.Pool | None = None
+        self._buffered_page_rollups: dict[str, dict[tuple, list[int | None]]] = {
+            "page_daily": {},
+            "page_weekly": {},
+            "page_monthly": {},
+            "page_yearly": {},
+        }
 
     async def connect(self) -> None:
         self.pool = await asyncpg.create_pool(self.database_url, min_size=1, max_size=10)
@@ -179,7 +185,9 @@ class Database:
                     """
                 )
 
-    async def insert_batch(self, events: list[ParsedEditEvent]) -> None:
+    async def insert_raw_and_count_rollups(
+        self, events: list[ParsedEditEvent]
+    ) -> None:
         if not events:
             return
         if not self.pool:
@@ -210,36 +218,81 @@ class Database:
                 )
                 await self._upsert_count_rollups(connection, UPSERT_HOURLY_SQL, rollups["hourly"])
                 await self._upsert_count_rollups(connection, UPSERT_DAILY_SQL, rollups["daily"])
-                await self._upsert_page_rollups(connection, "current_page_counts_daily", rollups["page_daily"])
-                await self._upsert_page_rollups(connection, "current_page_counts_weekly", rollups["page_weekly"])
-                await self._upsert_page_rollups(connection, "current_page_counts_monthly", rollups["page_monthly"])
-                await self._upsert_page_rollups(connection, "current_page_counts_yearly", rollups["page_yearly"])
+
+        logger.info("Inserted batch of %s events", len(events))
+
+    def buffer_page_rollups(self, events: list[ParsedEditEvent]) -> None:
+        if not events:
+            return
+
+        rollups = build_rollups(events)
+        self._merge_page_rollup_rows("page_daily", rollups["page_daily"])
+        self._merge_page_rollup_rows("page_weekly", rollups["page_weekly"])
+        self._merge_page_rollup_rows("page_monthly", rollups["page_monthly"])
+        self._merge_page_rollup_rows("page_yearly", rollups["page_yearly"])
+
+    async def refresh_page_leaderboards(self) -> None:
+        if not self.pool:
+            raise RuntimeError("Database pool is not connected")
+
+        payload = self._drain_buffered_page_rollups()
+        if not any(payload.values()):
+            return
+
+        affected_pairs = {
+            period_name: {(row[0], row[1]) for row in rows}
+            for period_name, rows in payload.items()
+        }
+
+        async with self.pool.acquire() as connection:
+            async with connection.transaction():
+                await self._upsert_page_rollups(
+                    connection,
+                    "current_page_counts_daily",
+                    payload["page_daily"],
+                )
+                await self._upsert_page_rollups(
+                    connection,
+                    "current_page_counts_weekly",
+                    payload["page_weekly"],
+                )
+                await self._upsert_page_rollups(
+                    connection,
+                    "current_page_counts_monthly",
+                    payload["page_monthly"],
+                )
+                await self._upsert_page_rollups(
+                    connection,
+                    "current_page_counts_yearly",
+                    payload["page_yearly"],
+                )
                 await self._refresh_top_pages(
                     connection,
                     "current_page_counts_daily",
                     "top_pages_daily",
-                    {(row[0], row[1]) for row in rollups["page_daily"]},
+                    affected_pairs["page_daily"],
                 )
                 await self._refresh_top_pages(
                     connection,
                     "current_page_counts_weekly",
                     "top_pages_weekly",
-                    {(row[0], row[1]) for row in rollups["page_weekly"]},
+                    affected_pairs["page_weekly"],
                 )
                 await self._refresh_top_pages(
                     connection,
                     "current_page_counts_monthly",
                     "top_pages_monthly",
-                    {(row[0], row[1]) for row in rollups["page_monthly"]},
+                    affected_pairs["page_monthly"],
                 )
                 await self._refresh_top_pages(
                     connection,
                     "current_page_counts_yearly",
                     "top_pages_yearly",
-                    {(row[0], row[1]) for row in rollups["page_yearly"]},
+                    affected_pairs["page_yearly"],
                 )
 
-        logger.info("Inserted batch of %s events", len(events))
+        refreshed_rows = sum(len(rows) for rows in payload.values())
+        logger.info("Refreshed page leaderboards from %s buffered rollup rows", refreshed_rows)
 
     async def _upsert_count_rollups(
         self,
@@ -321,3 +374,60 @@ class Database:
                 wiki,
                 self.top_pages_limit,
             )
+
+    def _merge_page_rollup_rows(self, period_name: str, rows: list[tuple]) -> None:
+        store = self._buffered_page_rollups[period_name]
+        for (
+            period_start,
+            wiki,
+            page_title,
+            page_id,
+            namespace,
+            edit_count,
+            bot_edits,
+            human_edits,
+        ) in rows:
+            key = (period_start, wiki, page_title)
+            current = store.get(key)
+            if current is None:
+                store[key] = [
+                    page_id,
+                    namespace,
+                    edit_count,
+                    bot_edits,
+                    human_edits,
+                ]
+                continue
+
+            if page_id is not None:
+                current[0] = page_id
+            if namespace is not None:
+                current[1] = namespace
+            current[2] += edit_count
+            current[3] += bot_edits
+            current[4] += human_edits
+
+    def _drain_buffered_page_rollups(self) -> dict[str, list[tuple]]:
+        payload = {
+            period_name: [
+                (
+                    period_start,
+                    wiki,
+                    page_title,
+                    values[0],
+                    values[1],
+                    values[2],
+                    values[3],
+                    values[4],
+                )
+                for (period_start, wiki, page_title), values in rows.items()
+            ]
+            for period_name, rows in self._buffered_page_rollups.items()
+        }
+        self._buffered_page_rollups = {
+            "page_daily": {},
+            "page_weekly": {},
+            "page_monthly": {},
+            "page_yearly": {},
+        }
+        return payload

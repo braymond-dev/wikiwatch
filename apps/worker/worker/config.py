@@ -14,6 +14,7 @@ class Settings:
     top_pages_limit: int
     batch_size: int
     flush_interval_seconds: float
+    leaderboard_refresh_interval_seconds: float
     reconnect_delay_seconds: float
     log_level: str
     store_raw_json: bool
@@ -66,6 +67,9 @@ def get_settings() -> Settings:
         top_pages_limit=int(os.getenv("WORKER_TOP_PAGES_LIMIT", "20")),
         batch_size=int(os.getenv("WORKER_BATCH_SIZE", "100")),
         flush_interval_seconds=float(os.getenv("WORKER_FLUSH_INTERVAL_SECONDS", "5")),
+        leaderboard_refresh_interval_seconds=float(
+            os.getenv("WORKER_LEADERBOARD_REFRESH_INTERVAL_SECONDS", "300")
+        ),
         reconnect_delay_seconds=float(
             os.getenv("WORKER_RECONNECT_DELAY_SECONDS", "3")
         ),

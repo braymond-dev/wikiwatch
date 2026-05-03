@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { AppChrome } from "@/components/AppChrome";
+import { LiveOverviewDataProvider } from "@/components/LiveOverviewDataProvider";
 
 import "./globals.css";
 
@@ -15,13 +16,19 @@ export default function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const shell = (
+    <div className="page-shell app-shell">
+      <AppChrome />
+      <div className="app-content">{children}</div>
+    </div>
+  );
+
   return (
     <html lang="en">
       <body>
-        <div className="page-shell app-shell">
-          <AppChrome />
-          <div className="app-content">{children}</div>
-        </div>
+        <Suspense fallback={shell}>
+          <LiveOverviewDataProvider>{shell}</LiveOverviewDataProvider>
+        </Suspense>
       </body>
     </html>
   );

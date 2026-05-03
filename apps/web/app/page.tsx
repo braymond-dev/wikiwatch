@@ -9,7 +9,6 @@ import {
   getEditsOverTime,
   getEditorTypeBreakdown,
   getRecentEdits,
-  getSummaryStats,
   getTrendingPages,
   getTopPages,
   getTopWikis,
@@ -30,7 +29,6 @@ export default async function Home({ searchParams }: HomeProps) {
   const filters = buildFilters(resolvedSearchParams);
 
   const [
-    summary,
     topPagesToday,
     trendingPages,
     editsOverTime,
@@ -38,7 +36,6 @@ export default async function Home({ searchParams }: HomeProps) {
     topWikis,
     recentEdits,
   ] = await Promise.all([
-    getSummaryStats(filters),
     getTopPages("day", filters, 8),
     getTrendingPages(filters, 5),
     getEditsOverTime("week", filters),
@@ -61,7 +58,6 @@ export default async function Home({ searchParams }: HomeProps) {
       </section>
 
       <LiveOverview
-        initialSummary={summary}
         initialRecentEdits={recentEdits}
         initialTopPagesToday={topPagesToday}
         showTopPagesToday={false}

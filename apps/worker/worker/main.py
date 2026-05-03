@@ -41,6 +41,7 @@ async def run() -> None:
 
     batch = []
     last_flush = loop.time()
+    last_leaderboard_refresh = 0.0
     last_retention_check = 0.0
 
     try:
@@ -56,9 +57,18 @@ async def run() -> None:
             )
 
             if should_flush:
-                await database.insert_batch(batch)
+                await database.insert_raw_and_count_rollups(batch)
+                database.buffer_page_rollups(batch)
                 batch.clear()
                 last_flush = now
+
+            should_refresh_leaderboards = (
+                now - last_leaderboard_refresh
+                >= settings.leaderboard_refresh_interval_seconds
+            )
+            if should_refresh_leaderboards:
+                await database.refresh_page_leaderboards()
+                last_leaderboard_refresh = now
 
             should_check_retention = (
                 now - last_retention_check >= settings.retention_check_interval_seconds
@@ -72,7 +82,9 @@ async def run() -> None:
                 break
     finally:
         if batch:
-            await database.insert_batch(batch)
+            await database.insert_raw_and_count_rollups(batch)
+            database.buffer_page_rollups(batch)
+        await database.refresh_page_leaderboards()
         await database.close()
 
 
