@@ -191,11 +191,16 @@ export function AnnotatedMonthlyEditsChart({
           <Tooltip content={<MonthlyTooltip />} />
           <ReferenceLine y={0} stroke="rgba(175,214,255,0.12)" />
           <Line
-            type="monotone"
+            type="linear"
             dataKey="totalEdits"
             stroke="#77f0c2"
             strokeWidth={3}
-            dot={false}
+            dot={{
+              r: 2.5,
+              fill: "#77f0c2",
+              stroke: "rgba(7,17,31,0.9)",
+              strokeWidth: 1.5,
+            }}
             activeDot={{ r: 6, fill: "#77f0c2", stroke: "#07111f", strokeWidth: 2 }}
           />
           <Scatter
