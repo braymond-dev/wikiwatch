@@ -16,10 +16,10 @@ import {
 
 import { tooltipTheme } from "@/components/charts/tooltip-theme";
 import { buildWikiPageUrl } from "@/lib/wiki-links";
-import type { AnnotatedMonthlyEdits, PeakAnnotation, TimeSeriesPoint } from "@/lib/types";
+import type { AnnotatedEditsData, PeakAnnotation, TimeSeriesPoint } from "@/lib/types";
 
-type AnnotatedMonthlyEditsChartProps = {
-  data: AnnotatedMonthlyEdits;
+type AnnotatedEditsChartProps = {
+  data: AnnotatedEditsData;
 };
 
 type PeakPoint = {
@@ -227,9 +227,9 @@ function MonthlyTooltip({
   );
 }
 
-export function AnnotatedMonthlyEditsChart({
+export function AnnotatedEditsChart({
   data,
-}: AnnotatedMonthlyEditsChartProps) {
+}: AnnotatedEditsChartProps) {
   const shellRef = useRef<HTMLDivElement | null>(null);
   const [chartWidth, setChartWidth] = useState(0);
 
@@ -286,16 +286,11 @@ export function AnnotatedMonthlyEditsChart({
           <Tooltip content={<MonthlyTooltip />} />
           <ReferenceLine y={0} stroke="rgba(175,214,255,0.12)" />
           <Line
-            type="linear"
+            type="monotone"
             dataKey="totalEdits"
             stroke="#77f0c2"
             strokeWidth={3}
-            dot={{
-              r: 2.5,
-              fill: "#77f0c2",
-              stroke: "rgba(7,17,31,0.9)",
-              strokeWidth: 1.5,
-            }}
+            dot={false}
             activeDot={{ r: 6, fill: "#77f0c2", stroke: "#07111f", strokeWidth: 2 }}
           />
           <Scatter

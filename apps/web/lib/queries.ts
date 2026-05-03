@@ -2,7 +2,7 @@ import "server-only";
 
 import { getPool } from "@/lib/db";
 import {
-  AnnotatedMonthlyEdits,
+  AnnotatedEditsData,
   DashboardFilters,
   EditorTypeRow,
   PeakAnnotation,
@@ -473,6 +473,7 @@ export async function getAvailableWikis(): Promise<string[]> {
 function selectPeakBuckets(
   series: TimeSeriesPoint[],
   limit: number,
+  minSeparationHours: number,
 ): Array<{ bucket: string; totalEdits: number }> {
   const candidates = series
     .map((point, index) => {
@@ -511,7 +512,7 @@ function selectPeakBuckets(
       const distanceHours = Math.abs(
         Math.round((candidateDate.getTime() - existingDate.getTime()) / 3600000),
       );
-      return distanceHours < 36;
+      return distanceHours < minSeparationHours;
     });
 
     if (!tooClose) {
@@ -529,21 +530,19 @@ function selectPeakBuckets(
   return selected.sort((left, right) => left.bucket.localeCompare(right.bucket));
 }
 
-async function getAnnotatedMonthlySeries(
+async function getAnnotatedSeries(
+  range: "week" | "month",
   filters: DashboardFilters = {},
 ): Promise<TimeSeriesPoint[]> {
   const wikiFilter = applyWikiScope(1, filters.wiki);
   const includeBotsFlagIndex = wikiFilter.values.length + 1;
   const pool = getPool();
+  const interval = range === "week" ? "7 days" : "30 days";
 
   const result = await pool.query(
     `
       SELECT
-        to_char(
-          date_trunc('day', bucket_start)
-            + floor(extract(hour from bucket_start) / 6) * interval '6 hours',
-          'YYYY-MM-DD"T"HH24:00:00"Z"'
-        ) AS bucket,
+        to_char(bucket_start, 'YYYY-MM-DD"T"HH24:00:00"Z"') AS bucket,
         CASE
           WHEN $${includeBotsFlagIndex}::boolean = false THEN COALESCE(SUM(human_edits), 0)::int
           ELSE COALESCE(SUM(total_edits), 0)::int
@@ -556,7 +555,7 @@ async function getAnnotatedMonthlySeries(
         ) AS "registeredEdits",
         COALESCE(SUM(temp_account_edits), 0)::int AS "tempAccountEdits"
       FROM edit_counts_hourly
-      WHERE bucket_start >= NOW() - interval '30 days'
+      WHERE bucket_start >= NOW() - interval '${interval}'
       ${wikiFilter.sql}
       GROUP BY 1
       ORDER BY 1 ASC
@@ -567,13 +566,15 @@ async function getAnnotatedMonthlySeries(
   return result.rows;
 }
 
-export async function getAnnotatedMonthlyEdits(
+export async function getAnnotatedEdits(
+  range: "week" | "month",
   filters: DashboardFilters = {},
-  peakLimit = 4,
+  peakLimit = range === "week" ? 4 : 5,
   pagesPerPeak = 3,
-): Promise<AnnotatedMonthlyEdits> {
-  const series = await getAnnotatedMonthlySeries(filters);
-  const peakBuckets = selectPeakBuckets(series, peakLimit);
+): Promise<AnnotatedEditsData> {
+  const minSeparationHours = range === "week" ? 18 : 60;
+  const series = await getAnnotatedSeries(range, filters);
+  const peakBuckets = selectPeakBuckets(series, peakLimit, minSeparationHours);
 
   if (peakBuckets.length === 0) {
     return { series, peaks: [] };

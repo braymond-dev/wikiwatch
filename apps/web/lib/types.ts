@@ -70,7 +70,7 @@ export type PeakAnnotation = {
   pages: TopPageRow[];
 };
 
-export type AnnotatedMonthlyEdits = {
+export type AnnotatedEditsData = {
   series: TimeSeriesPoint[];
   peaks: PeakAnnotation[];
 };

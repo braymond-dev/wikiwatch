@@ -1,14 +1,12 @@
 import { LeaderboardTable } from "@/components/LeaderboardTable";
 import { LiveOverview } from "@/components/LiveOverview";
 import { TrendingNow } from "@/components/TrendingNow";
-import { AnnotatedMonthlyEditsChart } from "@/components/charts/AnnotatedMonthlyEditsChart";
+import { AnnotatedActivityToggle } from "@/components/charts/AnnotatedActivityToggle";
 import { ChartCard } from "@/components/charts/ChartCard";
-import { EditsLineChart } from "@/components/charts/EditsLineChart";
 import { EditorTypeChart } from "@/components/charts/EditorTypeChart";
 import { WikiBarChart } from "@/components/charts/WikiBarChart";
 import {
-  getAnnotatedMonthlyEdits,
-  getEditsOverTime,
+  getAnnotatedEdits,
   getEditorTypeBreakdown,
   getRecentEdits,
   getTrendingPages,
@@ -33,16 +31,16 @@ export default async function Home({ searchParams }: HomeProps) {
   const [
     topPagesToday,
     trendingPages,
-    annotatedMonthlyEdits,
-    editsOverTime,
+    annotatedWeekEdits,
+    annotatedMonthEdits,
     editorTypes,
     topWikis,
     recentEdits,
   ] = await Promise.all([
     getTopPages("day", filters, 8),
     getTrendingPages(filters, 5),
-    getAnnotatedMonthlyEdits(filters),
-    getEditsOverTime("week", filters),
+    getAnnotatedEdits("week", filters),
+    getAnnotatedEdits("month", filters),
     getEditorTypeBreakdown("month", filters),
     getTopWikis("month", { includeBots: filters.includeBots }),
     getRecentEdits(filters, 18),
@@ -67,21 +65,15 @@ export default async function Home({ searchParams }: HomeProps) {
         showTopPagesToday={false}
       />
 
-      <section style={{ marginBottom: 24 }}>
-        <ChartCard
-          title="Annotated Activity Last 30 Days"
-          subtitle="Daily edit volume with the biggest monthly spikes labeled by the top pages driving each peak."
-        >
-          <AnnotatedMonthlyEditsChart data={annotatedMonthlyEdits} />
-        </ChartCard>
-      </section>
-
       <section className="two-col-wide" style={{ marginBottom: 24 }}>
         <ChartCard
-          title="Edits Over Time Last 7 Days"
-          subtitle="Seven-day edit volume using hourly rollups for a crisp trend view."
+          title="Annotated Activity"
+          subtitle="Toggle between 7-day and 30-day views with the same hourly granularity."
         >
-          <EditsLineChart data={editsOverTime} />
+          <AnnotatedActivityToggle
+            weekData={annotatedWeekEdits}
+            monthData={annotatedMonthEdits}
+          />
         </ChartCard>
 
         <ChartCard
