@@ -43,7 +43,25 @@ function formatCompactNumber(value: number) {
 }
 
 function formatBucketLabel(bucket: string) {
-  return new Date(`${bucket}T00:00:00Z`).toLocaleDateString("en-US", {
+  const date = new Date(bucket);
+  const hasTimeComponent = !bucket.endsWith("T00:00:00Z");
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    ...(hasTimeComponent
+      ? {
+          hour: "numeric" as const,
+          minute: "2-digit" as const,
+          hour12: true,
+        }
+      : {}),
+    timeZone: "UTC",
+  });
+}
+
+function formatAxisTick(bucket: string) {
+  return new Date(bucket).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     timeZone: "UTC",
@@ -243,7 +261,13 @@ export function AnnotatedMonthlyEditsChart({
           margin={CHART_MARGIN}
         >
           <CartesianGrid stroke="rgba(175,214,255,0.08)" vertical={false} />
-          <XAxis dataKey="bucket" stroke="#99abc2" tickLine={false} minTickGap={28} />
+          <XAxis
+            dataKey="bucket"
+            stroke="#99abc2"
+            tickLine={false}
+            minTickGap={28}
+            tickFormatter={formatAxisTick}
+          />
           <YAxis
             stroke="#99abc2"
             tickLine={false}

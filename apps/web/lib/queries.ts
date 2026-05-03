@@ -505,13 +505,13 @@ function selectPeakBuckets(
   const selected: Array<{ bucket: string; totalEdits: number }> = [];
 
   for (const candidate of candidates) {
-    const candidateDate = new Date(`${candidate.bucket}T00:00:00Z`);
+    const candidateDate = new Date(candidate.bucket);
     const tooClose = selected.some((existing) => {
-      const existingDate = new Date(`${existing.bucket}T00:00:00Z`);
-      const distanceDays = Math.abs(
-        Math.round((candidateDate.getTime() - existingDate.getTime()) / 86400000),
+      const existingDate = new Date(existing.bucket);
+      const distanceHours = Math.abs(
+        Math.round((candidateDate.getTime() - existingDate.getTime()) / 3600000),
       );
-      return distanceDays < 3;
+      return distanceHours < 36;
     });
 
     if (!tooClose) {
@@ -529,12 +529,50 @@ function selectPeakBuckets(
   return selected.sort((left, right) => left.bucket.localeCompare(right.bucket));
 }
 
+async function getAnnotatedMonthlySeries(
+  filters: DashboardFilters = {},
+): Promise<TimeSeriesPoint[]> {
+  const wikiFilter = applyWikiScope(1, filters.wiki);
+  const includeBotsFlagIndex = wikiFilter.values.length + 1;
+  const pool = getPool();
+
+  const result = await pool.query(
+    `
+      SELECT
+        to_char(
+          date_trunc('day', bucket_start)
+            + floor(extract(hour from bucket_start) / 6) * interval '6 hours',
+          'YYYY-MM-DD"T"HH24:00:00"Z"'
+        ) AS bucket,
+        CASE
+          WHEN $${includeBotsFlagIndex}::boolean = false THEN COALESCE(SUM(human_edits), 0)::int
+          ELSE COALESCE(SUM(total_edits), 0)::int
+        END AS "totalEdits",
+        COALESCE(SUM(bot_edits), 0)::int AS "botEdits",
+        COALESCE(SUM(human_edits), 0)::int AS "humanEdits",
+        GREATEST(
+          COALESCE(SUM(human_edits), 0)::int - COALESCE(SUM(temp_account_edits), 0)::int,
+          0
+        ) AS "registeredEdits",
+        COALESCE(SUM(temp_account_edits), 0)::int AS "tempAccountEdits"
+      FROM edit_counts_hourly
+      WHERE bucket_start >= NOW() - interval '30 days'
+      ${wikiFilter.sql}
+      GROUP BY 1
+      ORDER BY 1 ASC
+    `,
+    [...wikiFilter.values, filters.includeBots !== false],
+  );
+
+  return result.rows;
+}
+
 export async function getAnnotatedMonthlyEdits(
   filters: DashboardFilters = {},
   peakLimit = 4,
   pagesPerPeak = 3,
 ): Promise<AnnotatedMonthlyEdits> {
-  const series = await getEditsOverTime("month", filters);
+  const series = await getAnnotatedMonthlySeries(filters);
   const peakBuckets = selectPeakBuckets(series, peakLimit);
 
   if (peakBuckets.length === 0) {
@@ -547,6 +585,7 @@ export async function getAnnotatedMonthlyEdits(
     peakBuckets.map(async (peak): Promise<PeakAnnotation> => {
       const wikiFilter = applyWikiScope(2, filters.wiki);
       const limitIndex = wikiFilter.values.length + 2;
+      const peakDay = peak.bucket.slice(0, 10);
       const result = await pool.query<TopPageRow>(
         `
           SELECT
@@ -565,7 +604,7 @@ export async function getAnnotatedMonthlyEdits(
           ORDER BY rank ASC, "pageTitle" ASC
           LIMIT $${limitIndex}
         `,
-        [peak.bucket, ...wikiFilter.values, pagesPerPeak, filters.includeBots !== false],
+        [peakDay, ...wikiFilter.values, pagesPerPeak, filters.includeBots !== false],
       );
 
       const pages = await enrichTopPageRowsWithWikidataLabels(result.rows);
