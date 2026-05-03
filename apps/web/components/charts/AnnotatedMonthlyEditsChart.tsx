@@ -198,7 +198,12 @@ export function AnnotatedMonthlyEditsChart({
             dot={false}
             activeDot={{ r: 6, fill: "#77f0c2", stroke: "#07111f", strokeWidth: 2 }}
           />
-          <Scatter data={peakData} shape={<PeakBubble />} />
+          <Scatter
+            data={peakData}
+            dataKey="totalEdits"
+            shape={<PeakBubble />}
+            isAnimationActive={false}
+          />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
