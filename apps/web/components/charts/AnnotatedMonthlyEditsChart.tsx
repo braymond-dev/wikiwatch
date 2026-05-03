@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import {
   CartesianGrid,
   ComposedChart,
@@ -13,6 +15,7 @@ import {
 } from "recharts";
 
 import { tooltipTheme } from "@/components/charts/tooltip-theme";
+import { buildWikiPageUrl } from "@/lib/wiki-links";
 import type { AnnotatedMonthlyEdits, PeakAnnotation, TimeSeriesPoint } from "@/lib/types";
 
 type AnnotatedMonthlyEditsChartProps = {
@@ -24,6 +27,10 @@ type PeakPoint = {
   totalEdits: number;
   pages: PeakAnnotation["pages"];
 };
+
+const BUBBLE_WIDTH = 236;
+const BUBBLE_HORIZONTAL_PADDING = 14;
+const CHART_MARGIN = { top: 92, right: 88, left: 88, bottom: 12 };
 
 function formatCompactNumber(value: number) {
   if (value >= 1_000_000) {
@@ -47,19 +54,33 @@ function PeakBubble({
   cx,
   cy,
   payload,
+  chartWidth,
 }: {
   cx?: number;
   cy?: number;
   payload?: PeakPoint;
+  chartWidth: number;
 }) {
   if (!payload || cx == null || cy == null) {
     return null;
   }
 
-  const lines = payload.pages.map((page) => page.displayTitle ?? page.pageTitle);
-  const bubbleWidth = 188;
+  const lines = payload.pages.map((page) => ({
+    label: page.displayTitle ?? page.pageTitle,
+    href: buildWikiPageUrl(page.wiki, page.pageTitle),
+  }));
   const bubbleHeight = 52 + lines.length * 16;
-  const bubbleX = cx - bubbleWidth / 2;
+  const proposedX = cx - BUBBLE_WIDTH / 2;
+  const bubbleX =
+    chartWidth > 0
+      ? Math.max(
+          BUBBLE_HORIZONTAL_PADDING,
+          Math.min(
+            proposedX,
+            chartWidth - BUBBLE_WIDTH - BUBBLE_HORIZONTAL_PADDING,
+          ),
+        )
+      : proposedX;
   const bubbleY = Math.max(8, cy - bubbleHeight - 22);
   const stemTop = bubbleY + bubbleHeight;
 
@@ -85,7 +106,7 @@ function PeakBubble({
       <rect
         x={bubbleX}
         y={bubbleY}
-        width={bubbleWidth}
+        width={BUBBLE_WIDTH}
         height={bubbleHeight}
         rx={16}
         fill="rgba(5,11,21,0.92)"
@@ -100,18 +121,34 @@ function PeakBubble({
       >
         {formatBucketLabel(payload.bucket)} · {formatCompactNumber(payload.totalEdits)}
       </text>
-      {lines.map((line, index) => (
-        <text
-          key={`${payload.bucket}-${line}-${index}`}
-          x={bubbleX + 14}
-          y={bubbleY + 40 + index * 16}
-          fill="#eff7ff"
-          fontSize="12"
-          fontWeight={index === 0 ? "700" : "500"}
-        >
-          {line.length > 28 ? `${line.slice(0, 28)}...` : line}
-        </text>
-      ))}
+      {lines.map((line, index) => {
+        const label = line.label.length > 28 ? `${line.label.slice(0, 28)}...` : line.label;
+        const textNode = (
+          <text
+            x={bubbleX + 14}
+            y={bubbleY + 40 + index * 16}
+            fill="#eff7ff"
+            fontSize="12"
+            fontWeight={index === 0 ? "700" : "500"}
+            style={line.href ? { cursor: "pointer", textDecoration: "underline" } : undefined}
+          >
+            {label}
+          </text>
+        );
+
+        return line.href ? (
+          <a
+            key={`${payload.bucket}-${line.label}-${index}`}
+            href={line.href}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {textNode}
+          </a>
+        ) : (
+          <g key={`${payload.bucket}-${line.label}-${index}`}>{textNode}</g>
+        );
+      })}
     </g>
   );
 }
@@ -167,6 +204,31 @@ function MonthlyTooltip({
 export function AnnotatedMonthlyEditsChart({
   data,
 }: AnnotatedMonthlyEditsChartProps) {
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  const [chartWidth, setChartWidth] = useState(0);
+
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) {
+      return;
+    }
+
+    const updateWidth = () => {
+      setChartWidth(shell.clientWidth);
+    };
+
+    updateWidth();
+
+    const observer = new ResizeObserver(() => {
+      updateWidth();
+    });
+    observer.observe(shell);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   const peakData: PeakPoint[] = data.peaks.map((peak) => ({
     bucket: peak.bucket,
     totalEdits: peak.totalEdits,
@@ -174,11 +236,11 @@ export function AnnotatedMonthlyEditsChart({
   }));
 
   return (
-    <div className="chart-shell chart-shell-tall">
+    <div className="chart-shell chart-shell-tall" ref={shellRef}>
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
           data={data.series}
-          margin={{ top: 76, right: 24, left: 8, bottom: 8 }}
+          margin={CHART_MARGIN}
         >
           <CartesianGrid stroke="rgba(175,214,255,0.08)" vertical={false} />
           <XAxis dataKey="bucket" stroke="#99abc2" tickLine={false} minTickGap={28} />
@@ -206,7 +268,9 @@ export function AnnotatedMonthlyEditsChart({
           <Scatter
             data={peakData}
             dataKey="totalEdits"
-            shape={<PeakBubble />}
+            shape={(props: { cx?: number; cy?: number; payload?: PeakPoint }) => (
+              <PeakBubble {...props} chartWidth={chartWidth} />
+            )}
             isAnimationActive={false}
           />
         </ComposedChart>
