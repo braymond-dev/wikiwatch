@@ -42,6 +42,14 @@ function formatCompactNumber(value: number) {
   return `${value}`;
 }
 
+function withChartHeadroom(value: number) {
+  if (value <= 0) {
+    return 0;
+  }
+
+  return Math.ceil(value * 1.18);
+}
+
 function formatBucketLabel(bucket: string) {
   const date = new Date(bucket);
   const hasTimeComponent = !bucket.endsWith("T00:00:00Z");
@@ -273,6 +281,7 @@ export function AnnotatedMonthlyEditsChart({
             tickLine={false}
             width={58}
             tickFormatter={formatCompactNumber}
+            domain={[0, (max: number) => withChartHeadroom(max)]}
           />
           <Tooltip content={<MonthlyTooltip />} />
           <ReferenceLine y={0} stroke="rgba(175,214,255,0.12)" />
