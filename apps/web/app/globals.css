@@ -488,6 +488,10 @@ select {
   height: 320px;
 }
 
+.chart-shell-tall {
+  height: 420px;
+}
+
 .recent-edits-shell {
   max-height: 560px;
   overflow: auto;
@@ -588,6 +592,10 @@ select {
 
   .chart-shell {
     height: 280px;
+  }
+
+  .chart-shell-tall {
+    height: 360px;
   }
 
   .hero-grid,
