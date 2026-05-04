@@ -244,7 +244,7 @@ export function AnnotatedEditsChart({
           <Legend />
           <ReferenceLine y={0} stroke="rgba(175,214,255,0.12)" />
           <Line
-            type="monotone"
+            type="linear"
             dataKey="totalEdits"
             stroke="#77f0c2"
             strokeWidth={3}
@@ -252,21 +252,21 @@ export function AnnotatedEditsChart({
             activeDot={{ r: 6, fill: "#77f0c2", stroke: "#07111f", strokeWidth: 2 }}
           />
           <Line
-            type="monotone"
+            type="linear"
             dataKey="registeredEdits"
             stroke="#7fc2ff"
             strokeWidth={2}
             dot={false}
           />
           <Line
-            type="monotone"
+            type="linear"
             dataKey="tempAccountEdits"
             stroke="#f08ae8"
             strokeWidth={2}
             dot={false}
           />
           <Line
-            type="monotone"
+            type="linear"
             dataKey="botEdits"
             stroke="#ffb36b"
             strokeWidth={2}
