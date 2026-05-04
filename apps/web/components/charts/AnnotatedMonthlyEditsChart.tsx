@@ -214,16 +214,12 @@ export function AnnotatedEditsChart({
         totalEdits: peak.totalEdits,
         pages: peak.pages,
       }))
-    : data.peaks.map((peak) => ({
-        bucket: peak.bucket,
-        totalEdits: peak.totalEdits,
-        pages: peak.pages,
-      }));
+    : [];
   const seriesMax = data.series.reduce((max, point) => Math.max(max, point.totalEdits), 0);
   const yDomainMax = withChartHeadroom(seriesMax);
 
   return (
-    <div className="chart-shell chart-shell-tall" ref={shellRef}>
+    <div className="chart-shell chart-shell-tall annotated-chart-stack" ref={shellRef}>
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data.series} margin={CHART_MARGIN}>
           <CartesianGrid stroke="rgba(175,214,255,0.08)" vertical={false} />
@@ -272,25 +268,30 @@ export function AnnotatedEditsChart({
             strokeWidth={2}
             dot={false}
           />
-          <Scatter
-            data={peakData}
-            dataKey="totalEdits"
-            shape={(props: unknown) => {
-              if (!showAnnotations) {
-                return <g />;
-              }
-
-              return (
-                <PeakBubble
-                  {...(props as { cx?: number; cy?: number; payload?: PeakPoint })}
-                  chartWidth={chartWidth}
-                />
-              );
-            }}
-            isAnimationActive={false}
-          />
         </ComposedChart>
       </ResponsiveContainer>
+      {showAnnotations ? (
+        <div className="annotated-chart-overlay" aria-hidden="true">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={data.series} margin={CHART_MARGIN}>
+              <XAxis dataKey="bucket" hide />
+              <YAxis domain={[0, yDomainMax]} hide />
+              <Legend content={() => <g />} />
+              <Scatter
+                data={peakData}
+                dataKey="totalEdits"
+                shape={(props: unknown) => (
+                  <PeakBubble
+                    {...(props as { cx?: number; cy?: number; payload?: PeakPoint })}
+                    chartWidth={chartWidth}
+                  />
+                )}
+                isAnimationActive={false}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      ) : null}
     </div>
   );
 }
