@@ -31,6 +31,7 @@ type PeakPoint = {
 const BUBBLE_WIDTH = 236;
 const BUBBLE_HORIZONTAL_PADDING = 14;
 const CHART_MARGIN = { top: 92, right: 88, left: 88, bottom: 12 };
+const INVISIBLE_AXIS_TICK = { fill: "transparent", fontSize: 12 };
 
 function formatCompactNumber(value: number) {
   if (value >= 1_000_000) {
@@ -274,9 +275,58 @@ export function AnnotatedEditsChart({
         <div className="annotated-chart-overlay" aria-hidden="true">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data.series} margin={CHART_MARGIN}>
-              <XAxis dataKey="bucket" hide />
-              <YAxis domain={[0, yDomainMax]} hide />
-              <Legend content={() => <g />} />
+              <XAxis
+                dataKey="bucket"
+                stroke="transparent"
+                tickLine={false}
+                minTickGap={28}
+                tickFormatter={formatAxisTick}
+                tick={INVISIBLE_AXIS_TICK}
+              />
+              <YAxis
+                stroke="transparent"
+                tickLine={false}
+                width={58}
+                tickFormatter={formatCompactNumber}
+                domain={[0, yDomainMax]}
+                tick={INVISIBLE_AXIS_TICK}
+              />
+              <Legend
+                formatter={() => ""}
+                wrapperStyle={{ visibility: "hidden" }}
+              />
+              <Line
+                type="linear"
+                dataKey="totalEdits"
+                stroke="transparent"
+                strokeWidth={3}
+                dot={false}
+                isAnimationActive={false}
+              />
+              <Line
+                type="linear"
+                dataKey="registeredEdits"
+                stroke="transparent"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+              <Line
+                type="linear"
+                dataKey="tempAccountEdits"
+                stroke="transparent"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+              <Line
+                type="linear"
+                dataKey="botEdits"
+                stroke="transparent"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
               <Scatter
                 data={peakData}
                 dataKey="totalEdits"
